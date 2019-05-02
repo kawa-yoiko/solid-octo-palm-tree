@@ -1,4 +1,5 @@
-const https = require('https')
+const https = require('https');
+const fs = require('fs');
 
 const asyncGet = (url) => new Promise((resolve, reject) => { 
   https.get(url, (res) => {
@@ -43,6 +44,7 @@ const asyncTryGet = async (url, tries) => {
 };
 
 const fetchList = async (list, limitArg) => {
+  console.log(`Fetching list ${list}`);
   const limit = 500;
   const ret = [];
   let continueParam = '';
@@ -58,17 +60,48 @@ const fetchList = async (list, limitArg) => {
     continueParam = '&';
     for (let i in continueObj) continueParam += `${i}=${continueObj[i]}`;
   }
+  console.log(`Fetched list ${list} of ${ret.length} element(s)`);
+  return ret;
+};
+
+let pagesFetchedCount = 0;
+let pagesToFetchTotal = 0;
+
+const fetchPage = async (pageId) => {
+  const ret = await asyncTryGet(`https://cavestory.fandom.com/index.php?curid=${pageId}&action=raw`);
+  console.log(`Fetched page ${pageId} (${++pagesFetchedCount} / ${pagesToFetchTotal})`);
   return ret;
 };
 
 (async () => {
   const pages = await fetchList('allpages', 'aplimit');
-  console.log(pages);
-  console.log(pages.length);
   const categories = await fetchList('allcategories', 'aclimit');
-  console.log(categories);
-  console.log(categories.length);
   const images = await fetchList('allimages', 'ailimit');
-  console.log(images);
-  console.log(images.length);
+
+  const pageContents = {};
+  const promises = [];
+  pagesToFetchTotal = pages.length;
+  for (let i = 0; i < pages.length; ++i)
+    promises.push(fetchPage(pages[i].pageid));
+  const promiseOfAll = Promise.all(promises);
+  const pageContentsByIndex = await promiseOfAll;
+  for (let i = 0; i < pageContentsByIndex.length; ++i)
+    pageContents[pages[i].pageid] = pageContentsByIndex[i];
+
+  const pageContentsJSON = JSON.stringify({
+    pages: pages,
+    categories: categories,
+    images: images,
+    pageContents: pageContents
+  });
+  const filePath = 'dataset.json';
+  fs.writeFile(filePath, pageContentsJSON, (err) => {
+    if (err) {
+      console.log(`Error writing to file ${filePath}: ${err.message}`);
+      console.log('Dumping dataset in the console. See below');
+      console.log(pageContentsJSON);
+    } else {
+      console.log(`Dataset written to file ${filePath}`);
+    }
+  });
 })();
