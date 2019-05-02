@@ -1,6 +1,8 @@
 const https = require('https');
 const fs = require('fs');
 
+const wikiName = process.argv[2] || 'cavestory';
+
 const asyncGet = (url) => new Promise((resolve, reject) => { 
   https.get(url, (res) => {
     const { statusCode } = res;
@@ -43,13 +45,14 @@ const asyncTryGet = async (url, tries) => {
   return null;
 };
 
-const fetchList = async (list, limitArg) => {
+const fetchList = async (list, limitArg, extraParams) => {
   console.log(`Fetching list ${list}`);
+  extraParams = extraParams || '';
   const limit = 500;
   const ret = [];
   let continueParam = '';
   while (1) {
-    const response = await asyncTryGet(`https://cavestory.fandom.com/api.php?format=json&action=query&list=${list}&${limitArg}=${limit}${continueParam}`);
+    const response = await asyncTryGet(`https://${wikiName}.fandom.com/api.php?format=json&action=query&list=${list}&${limitArg}=${limit}${extraParams}${continueParam}`);
 
     const queryList = response['query'][list];
     for (let i = 0; i < queryList.length; i++) ret.push(queryList[i]);
@@ -68,15 +71,16 @@ let pagesFetchedCount = 0;
 let pagesToFetchTotal = 0;
 
 const fetchPage = async (pageId) => {
-  const ret = await asyncTryGet(`https://cavestory.fandom.com/index.php?curid=${pageId}&action=raw`);
+  const ret = await asyncTryGet(`https://${wikiName}.fandom.com/index.php?curid=${pageId}&action=raw`);
   console.log(`Fetched page ${pageId} (${++pagesFetchedCount} / ${pagesToFetchTotal})`);
   return ret;
 };
 
 (async () => {
   const pages = await fetchList('allpages', 'aplimit');
+  const files = await fetchList('allpages', 'aplimit', '&apnamespace=6');
+  // Or use namespace 14 instead, either works
   const categories = await fetchList('allcategories', 'aclimit');
-  const images = await fetchList('allimages', 'ailimit');
 
   const pageContents = {};
   const promises = [];
@@ -91,10 +95,10 @@ const fetchPage = async (pageId) => {
   const pageContentsJSON = JSON.stringify({
     pages: pages,
     categories: categories,
-    images: images,
+    files: files,
     pageContents: pageContents
   });
-  const filePath = 'dataset.json';
+  const filePath = `${wikiName}-raw.json`;
   fs.writeFile(filePath, pageContentsJSON, (err) => {
     if (err) {
       console.log(`Error writing to file ${filePath}: ${err.message}`);
