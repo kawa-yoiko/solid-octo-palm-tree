@@ -19,25 +19,31 @@ static Vector2 Trunk[10] = {
 };
 static Vector2 *TrunkScaled = NULL;
 
-static const Vector2 Leaf[16] = {
-    {0, 0},
-    {0, 1},
-    {1, 1},
-    {1, 0}
+static const Vector2 Leaf1[16] = {
+    {1, 0.5},
+    {0.5, 0},
+    {-0.1, 0.4},
+    {0, 0.5},
+    {-0.1, 0.7},
+    {0.5, 0.3},
+    {1, 0.5}
 };
-static Vector2 *LeafScaled = NULL;
+static Vector2 *Leaf1Scaled = NULL;
 
 void DrawIcon(Vector2 offset, float scale, double t)
 {
-    GenerateAnchoredPoly(&LeafScaled, Leaf, 16, offset, (Vector2){0.5, 1}, 25);
-    GenerateAnchoredBezier(&TrunkScaled, Trunk, 3, 24, offset, (Vector2){0.5, 1}, 120);
+    GenerateAnchoredBezier(&TrunkScaled, Trunk, 3, 24,
+        offset, (Vector2){0.5, 1}, 120 * scale);
+    GenerateAnchoredBezier(&Leaf1Scaled, Leaf1, 2, 12,
+        (Vector2){offset.x, offset.y - 90 * scale},
+        (Vector2){1, 0.5}, 80 * scale);
 
     DrawLineEx(
         (Vector2){offset.x - 200 * scale, offset.y},
         (Vector2){offset.x + 200 * scale, offset.y},
         3, DARKGRAY);
-    DrawPolyFilledConvex(LeafScaled, 4, DARKGRAY);
     DrawPolyFilledConcave(TrunkScaled, 73, DARKGRAY);
+    DrawPolyFilledConcave(Leaf1Scaled, 25, DARKGRAY);
 }
 
 int main(int argc, char *argv[])

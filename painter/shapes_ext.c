@@ -186,7 +186,6 @@ static void Triangulate(const Vector2 *p, int n)
 
     for CyclicListEach(convex, i) CheckEarAndUpdate(p, i);
 
-    static bool x = true;
     for (int cnt = 0; cnt < n - 3; cnt++) {
         int u = ear.head->next - ear.nodes,
             v = PrevPolyVertex(u),
@@ -200,7 +199,7 @@ static void Triangulate(const Vector2 *p, int n)
         int vv = PrevPolyVertex(v),
             ww = NextPolyVertex(w);
         if (CyclicListContains(&reflex, v)) {
-            if (cross(p[vv], p[v], p[u]) >= 0) {    // Note the flipped Y-axis
+            if (cross(p[vv], p[v], p[w]) <= 0) {    // Note the flipped Y-axis
                 CyclicListRemove(&reflex, v);
                 CyclicListInsert(&convex, v);
                 CheckEarAndUpdate(p, v);
@@ -209,7 +208,7 @@ static void Triangulate(const Vector2 *p, int n)
             CheckEarAndUpdate(p, v);
         }
         if (CyclicListContains(&reflex, w)) {
-            if (cross(p[u], p[w], p[ww]) >= 0) {
+            if (cross(p[v], p[w], p[ww]) <= 0) {
                 CyclicListRemove(&reflex, w);
                 CyclicListInsert(&convex, w);
                 CheckEarAndUpdate(p, w);
@@ -218,14 +217,26 @@ static void Triangulate(const Vector2 *p, int n)
             CheckEarAndUpdate(p, w);
         }
     }
-    if (x) x = false;
+    int u = ear.head->next - ear.nodes,
+        v = PrevPolyVertex(u),
+        w = NextPolyVertex(u);
+    rlAddTriangle(p[u], p[v], p[w]);
 }
 
 void DrawPolyFilledConcave(const Vector2 *points, int numPoints, Color color)
 {
     if (numPoints < 3) return;
+    /*rlBegin(RL_LINES);
+        rlColor4ub(color.r, color.g, color.b, color.a);
+        for (int i = 0; i < numPoints - 1; i++) {
+            rlVertex2f(points[i].x, points[i].y);
+            rlVertex2f(points[i + 1].x, points[i + 1].y);
+        }
+    rlEnd();*/
     rlBegin(RL_TRIANGLES);
         rlColor4ub(color.r, color.g, color.b, color.a);
         Triangulate(points, numPoints);
+        //for (int i = 2; i < numPoints; i++)
+        //    rlAddTriangle(points[0], points[1], points[i]);
     rlEnd();
 }
