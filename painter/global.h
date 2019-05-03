@@ -12,7 +12,7 @@ void GenerateAnchoredPoly(
 void GenerateAnchoredBezier(
     Vector2 **outPoints,
     const Vector2 *points, int numSegs, int numDivs,
-    Vector2 offset, Vector2 anchor, float scale);
+    Vector2 offset, Vector2 anchor, float scale, float rotation);
 
 void DrawPolyFilledConvex(const Vector2 *points, int numPoints, Color color);
 

@@ -41,7 +41,7 @@ static inline Vector2 bezierInterpolate(
 void GenerateAnchoredBezier(
     Vector2 **outPoints,
     const Vector2 *points, int numSegs, int numDivs,
-    Vector2 offset, Vector2 anchor, float scale)
+    Vector2 offset, Vector2 anchor, float scale, float rotation)
 {
     Vector2 *_outPoints = *outPoints;
     if (_outPoints == NULL)
@@ -50,11 +50,18 @@ void GenerateAnchoredBezier(
     for (int i = 0; i < numSegs; i++)
         for (int j = 0; j < numDivs + (i == numSegs - 1 ? 1 : 0); j++) {
             int idx = i * numDivs + j;
-            _outPoints[idx] = bezierInterpolate(
+            Vector2 p = bezierInterpolate(
                 points[i * 3], points[i * 3 + 1],
                 points[i * 3 + 2], points[i * 3 + 3], (float)j / numDivs);
-            _outPoints[idx].x = offset.x + (_outPoints[idx].x - anchor.x) * scale;
-            _outPoints[idx].y = offset.y + (_outPoints[idx].y - anchor.y) * scale;
+            float x1 = p.x - anchor.x, x2;
+            float y1 = p.y - anchor.y;
+            if (rotation != 0) {
+                x2 = x1 * cos(rotation) - y1 * sin(rotation);
+                y1 = x1 * sin(rotation) + y1 * cos(rotation);
+                x1 = x2;
+            }
+            _outPoints[idx].x = offset.x + x1 * scale;
+            _outPoints[idx].y = offset.y + y1 * scale;
         }
 
     *outPoints = _outPoints;
@@ -226,17 +233,8 @@ static void Triangulate(const Vector2 *p, int n)
 void DrawPolyFilledConcave(const Vector2 *points, int numPoints, Color color)
 {
     if (numPoints < 3) return;
-    /*rlBegin(RL_LINES);
-        rlColor4ub(color.r, color.g, color.b, color.a);
-        for (int i = 0; i < numPoints - 1; i++) {
-            rlVertex2f(points[i].x, points[i].y);
-            rlVertex2f(points[i + 1].x, points[i + 1].y);
-        }
-    rlEnd();*/
     rlBegin(RL_TRIANGLES);
         rlColor4ub(color.r, color.g, color.b, color.a);
         Triangulate(points, numPoints);
-        //for (int i = 2; i < numPoints; i++)
-        //    rlAddTriangle(points[0], points[1], points[i]);
     rlEnd();
 }
