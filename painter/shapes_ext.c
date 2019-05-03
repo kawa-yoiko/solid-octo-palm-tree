@@ -139,7 +139,9 @@ static void CyclicListRemove(struct CyclicList *ls, int idx)
     ((__var) = __node - (__ls).nodes, __node != (__ls).head); \
     __node = __node->next)
 
-#define PrevPolyVertex(__u) (poly.nodes[__u].prev - poly.nodes)
+#define PrevPolyVertex(__u) \
+    ((poly.nodes[__u].prev == poly.head ? \
+    poly.head->prev : poly.nodes[__u].prev) - poly.nodes)
 #define NextPolyVertex(__u) \
     ((poly.nodes[__u].next == poly.head ? \
     poly.head->next : poly.nodes[__u].next) - poly.nodes)
@@ -154,7 +156,6 @@ static inline void CheckEarAndUpdate(const Vector2 *p, int u)
         if (CheckCollisionPointTriangle(p[i], p[u], p[v], p[w])) {
             // Not an ear!
             if (isIn) CyclicListRemove(&ear, u);
-            printf("%d is not an ear! [reflex %d]\n", u, i);
             return;
         }
     // An ear
@@ -175,7 +176,9 @@ static void Triangulate(const Vector2 *p, int n)
     // Add in reverse order so that list traversal order is polygon order
     for (i = n - 1; i >= 0; --i) {
         CyclicListInsert(&poly, i);
-        if (cross(p[(i + n - 1) % n], p[i], p[(i + 1) % n]) >= 0)
+        // The input is counter-clockwise, but the Y-axis is flipped
+        // So for a vertex to be convex, the cross product should be negative
+        if (cross(p[(i + n - 1) % n], p[i], p[(i + 1) % n]) <= 0)
             CyclicListInsert(&convex, i);
         else
             CyclicListInsert(&reflex, i);
@@ -185,20 +188,10 @@ static void Triangulate(const Vector2 *p, int n)
 
     static bool x = true;
     for (int cnt = 0; cnt < n - 3; cnt++) {
-        //if (x && cnt >= n - 5) {
-        if (ear.head->next == ear.head) break;
-        if (x) {
-            printf("Iter %d\n", cnt);
-            for CyclicListEach(poly, i) printf("%.4f %.4f %d\n", p[i].x, p[i].y, i);
-            for CyclicListEach(convex, i) printf("convex %d\n", i);
-            for CyclicListEach(ear, i) printf("ear %d\n", i);
-            for CyclicListEach(reflex, i) printf("reflex %d\n", i);
-        }
         int u = ear.head->next - ear.nodes,
             v = PrevPolyVertex(u),
             w = NextPolyVertex(u);
         rlAddTriangle(p[v], p[u], p[w]);
-        if (x) printf("Iter %d: Emitting %d %d %d\n", cnt + 1, u, v, w);
         CyclicListRemove(&poly, u);
         CyclicListRemove(&convex, u);
         CyclicListRemove(&ear, u);
@@ -207,25 +200,19 @@ static void Triangulate(const Vector2 *p, int n)
         int vv = PrevPolyVertex(v),
             ww = NextPolyVertex(w);
         if (CyclicListContains(&reflex, v)) {
-            if (cross(p[vv], p[v], p[u]) <= 0) {
-                if (x) printf("!! convex %d\n", v);
+            if (cross(p[vv], p[v], p[u]) >= 0) {    // Note the flipped Y-axis
                 CyclicListRemove(&reflex, v);
                 CyclicListInsert(&convex, v);
                 CheckEarAndUpdate(p, v);
-            } else {
-                printf("> < %d %d %d\n", vv, v, u);
             }
         } else {
             CheckEarAndUpdate(p, v);
         }
         if (CyclicListContains(&reflex, w)) {
-            if (cross(p[u], p[w], p[ww]) <= 0) {
-                if (x) printf("!! convex %d\n", w);
+            if (cross(p[u], p[w], p[ww]) >= 0) {
                 CyclicListRemove(&reflex, w);
                 CyclicListInsert(&convex, w);
                 CheckEarAndUpdate(p, w);
-            } else {
-                printf("> < %d %d %d\n", u, w, ww);
             }
         } else {
             CheckEarAndUpdate(p, w);
@@ -240,8 +227,5 @@ void DrawPolyFilledConcave(const Vector2 *points, int numPoints, Color color)
     rlBegin(RL_TRIANGLES);
         rlColor4ub(color.r, color.g, color.b, color.a);
         Triangulate(points, numPoints);
-        /*for (int i = 2; i < numPoints; i++) {
-            rlAddTriangle(points[0], points[i - 1], points[i]);
-        }*/
     rlEnd();
 }
