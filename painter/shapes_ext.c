@@ -71,3 +71,33 @@ void DrawPolyFilledConvex(const Vector2 *points, int numPoints, Color color)
         }
     rlEnd();
 }
+
+static inline float cross(const Vector2 A, const Vector2 B, const Vector2 C)
+{
+    return (B.x - A.x) * (C.y - A.y) - (C.x - A.x) * (B.y - A.y);
+}
+
+static inline void rlAddTriangle(Vector2 A, Vector2 B, Vector2 C)
+{
+    if (cross(A, B, C) <= 0) {
+        rlVertex2f(A.x, A.y);
+        rlVertex2f(B.x, B.y);
+        rlVertex2f(C.x, C.y);
+    } else {
+        rlVertex2f(B.x, B.y);
+        rlVertex2f(A.x, A.y);
+        rlVertex2f(C.x, C.y);
+    }
+}
+
+// Incorrect
+void DrawPolyFilledConcave(const Vector2 *points, int numPoints, Color color)
+{
+    if (numPoints < 3) return;
+    rlBegin(RL_TRIANGLES);
+        rlColor4ub(color.r, color.g, color.b, color.a);
+        for (int i = 2; i < numPoints; i++) {
+            rlAddTriangle(points[0], points[i - 1], points[i]);
+        }
+    rlEnd();
+}

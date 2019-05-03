@@ -6,10 +6,13 @@
 #define REPO_TITLE "solid-octo-palm-tree"
 
 static Vector2 Trunk[16] = {
+    {0.55, 1},      // 0
+    {0.55, 0.6},
+    {0.5, 0.45},
+    {0.45, 0.3},    // 1
     {0, 0},
-    {0, 0.22},
-    {0.21, 0.99},
-    {1, 1}
+    {0, 0},
+    {0.55, 0.25},   // 2
 };
 static Vector2 *TrunkScaled = NULL;
 
@@ -25,15 +28,14 @@ void DrawIcon(Vector2 offset, float scale, double t)
 {
     GenerateAnchoredPoly(&LeafScaled, Leaf, 16, offset, (Vector2){0.5, 1}, 25);
 
-    Trunk[2].y = (fmodf(t, 1) + 2) / 3;
-    GenerateAnchoredBezier(&TrunkScaled, Trunk, 1, 24, offset, (Vector2){0.5, 0}, 100);
+    GenerateAnchoredBezier(&TrunkScaled, Trunk, 1, 24, offset, (Vector2){0.5, 1}, 120);
 
     DrawLineEx(
         (Vector2){offset.x - 200 * scale, offset.y},
         (Vector2){offset.x + 200 * scale, offset.y},
         3, DARKGRAY);
     DrawPolyFilledConvex(LeafScaled, 4, DARKGRAY);
-    DrawPolyFilledConvex(TrunkScaled, 25, DARKGRAY);
+    DrawPolyFilledConcave(TrunkScaled, 25, DARKGRAY);
 }
 
 int main(int argc, char *argv[])
