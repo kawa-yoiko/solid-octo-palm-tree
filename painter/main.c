@@ -1,38 +1,39 @@
 #include "raylib.h"
 #include "global.h"
+#include <math.h>
 #include <stdlib.h>
 
 #define REPO_TITLE "solid-octo-palm-tree"
 
+static Vector2 Trunk[16] = {
+    {0, 0},
+    {0, 0.22},
+    {0.21, 0.99},
+    {1, 1}
+};
+static Vector2 *TrunkScaled = NULL;
+
 static const Vector2 Leaf[16] = {
-    {25, 25},
-    {100, 25},
-    {100, 100},
-    {25, 100}
+    {0, 0},
+    {0, 1},
+    {1, 1},
+    {1, 0}
 };
 static Vector2 *LeafScaled = NULL;
 
-Vector2 *GenerateAnchoredPoly(
-    const Vector2 *points, int numPoints,
-    Vector2 offset, Vector2 anchor, float scale)
-{
-    Vector2 *scaledPoints = (Vector2 *)malloc(sizeof(Vector2) * numPoints);
-    for (int i = 0; i < numPoints; i++) {
-        scaledPoints[i].x = offset.x + (points[i].x - anchor.x) * scale;
-        scaledPoints[i].y = offset.y + (points[i].y - anchor.y) * scale;
-    }
-    return scaledPoints;
-}
-
 void DrawIcon(Vector2 offset, float scale, double t)
 {
-    LeafScaled = GenerateAnchoredPoly(Leaf, 16, offset, (Vector2){0.5, 1}, 25);
+    GenerateAnchoredPoly(&LeafScaled, Leaf, 16, offset, (Vector2){0.5, 1}, 25);
+
+    Trunk[2].y = (fmodf(t, 1) + 2) / 3;
+    GenerateAnchoredBezier(&TrunkScaled, Trunk, 1, 24, offset, (Vector2){0.5, 0}, 100);
 
     DrawLineEx(
         (Vector2){offset.x - 200 * scale, offset.y},
         (Vector2){offset.x + 200 * scale, offset.y},
         3, DARKGRAY);
-    DrawPolyExLines(Leaf, 4, DARKGRAY);
+    DrawPolyFilledConvex(LeafScaled, 4, DARKGRAY);
+    DrawPolyFilledConvex(TrunkScaled, 25, DARKGRAY);
 }
 
 int main(int argc, char *argv[])
