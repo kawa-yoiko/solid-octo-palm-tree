@@ -41,7 +41,8 @@ static inline Vector2 bezierInterpolate(
 void GenerateAnchoredBezier(
     Vector2 **outPoints,
     const Vector2 *points, int numSegs, int numDivs,
-    Vector2 offset, Vector2 anchor, float scale, float rotation)
+    Vector2 offset, Vector2 anchor,
+    float scaleX, float scaleY, float rotation)
 {
     Vector2 *_outPoints = *outPoints;
     if (_outPoints == NULL)
@@ -60,8 +61,8 @@ void GenerateAnchoredBezier(
                 y1 = x1 * sin(rotation) + y1 * cos(rotation);
                 x1 = x2;
             }
-            _outPoints[idx].x = offset.x + x1 * scale;
-            _outPoints[idx].y = offset.y + y1 * scale;
+            _outPoints[idx].x = offset.x + x1 * scaleX;
+            _outPoints[idx].y = offset.y + y1 * scaleY;
         }
 
     *outPoints = _outPoints;
