@@ -239,3 +239,9 @@ void DrawPolyFilledConcave(const Vector2 *points, int numPoints, Color color)
         Triangulate(points, numPoints);
     rlEnd();
 }
+
+void DrawCircleFilledOutline(Vector2 c, float r, Color fill, Color outline)
+{
+    DrawCircleV(c, r + 3, outline);
+    DrawCircleV(c, r, fill);
+}

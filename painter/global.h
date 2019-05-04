@@ -6,9 +6,13 @@
 #define SCR_W   1200
 #define SCR_H   720
 
+// global.c
+
 extern Font font;
 
 void PalmTreeSetup();
+
+// shapes_ext.c
 
 void GenerateAnchoredPoly(
     Vector2 **outPoints,
@@ -23,6 +27,10 @@ void GenerateAnchoredBezier(
 
 void DrawPolyFilledConvex(const Vector2 *points, int numPoints, Color color);
 
+void DrawCircleFilledOutline(Vector2 c, float r, Color fill, Color outline);
+
 #include "easings.h"
+
+#include "math_ext.h"
 
 #endif
