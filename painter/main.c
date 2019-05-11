@@ -156,7 +156,6 @@ static inline void DrawStartupScreen()
     float t = GetTime();
     if (t < 0.3) return;
     t -= 0.3;
-    t += 4;
 
     float rate = EaseCubicOut((Clamp(t, 1.7, 2.2) - 1.7) * 2);
 
