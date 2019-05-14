@@ -73,44 +73,46 @@ void DrawIcon(Vector2 offset, float scale, float t)
         offset, (Vector2){0.5, 1}, 120 * scale, 120 * scale * rate, 0);
     DrawPolyFilledConcave(TrunkScaled, 37, GRAY_8);
 
+    const int OvO = 54;
+
     rate = EaseCubicOut((Clamp(t, 1.05, 1.25) - 1.05) * 5);
     if (rate > 1e-4) {
         LeafL[1].y = 0;
-        GenerateAnchoredBezier(&Leaf1Scaled, LeafL, 2, 12,
+        GenerateAnchoredBezier(&Leaf1Scaled, LeafL, 2, OvO,
             (Vector2){offset.x + 2 * scale, offset.y - 86 * scale},
             (Vector2){1, 0.5}, 70 * scale * rate, 70 * scale * rate,
             0 + easeCycle(t, 2.51, 0.025));
-        DrawPolyFilledConcave(Leaf1Scaled, 25, GRAY_8);
+        DrawPolyFilledConcave(Leaf1Scaled, OvO * 2 + 1, GRAY_8);
     }
 
     rate = EaseCubicOut((Clamp(t, 0.8, 1.05) - 0.8) * 4);
     if (rate > 1e-4) {
         LeafL[1].y = -0.04 + easeCycle(t, 3.2, 0.02);
-        GenerateAnchoredBezier(&Leaf2Scaled, LeafL, 2, 12,
+        GenerateAnchoredBezier(&Leaf2Scaled, LeafL, 2, OvO,
             (Vector2){offset.x + 7 * scale, offset.y - 86 * scale},
             (Vector2){1, 0.5}, 80 * scale * rate, 80 * scale * rate,
             -0.4 + easeCycle(t + 3, 3.51, 0.035));
-        DrawPolyFilledConcave(Leaf2Scaled, 25, GRAY_8);
+        DrawPolyFilledConcave(Leaf2Scaled, OvO * 2 + 1, GRAY_8);
     }
 
     rate = EaseCubicOut((Clamp(t, 0.92, 1.17) - 0.92) * 4);
     if (rate > 1e-4) {
         LeafR[5].y = easeCycle(t, 2.2, 0.02);
-        GenerateAnchoredBezier(&Leaf3Scaled, LeafR, 2, 12,
+        GenerateAnchoredBezier(&Leaf3Scaled, LeafR, 2, OvO,
             (Vector2){offset.x - 6 * scale, offset.y - 82 * scale},
             (Vector2){0, 0.5}, 80 * scale * rate, 80 * scale * rate,
             +0.1 + easeCycle(t + 1, 3.38, 0.04));
-        DrawPolyFilledConcave(Leaf3Scaled, 25, GRAY_8);
+        DrawPolyFilledConcave(Leaf3Scaled, OvO * 2 + 1, GRAY_8);
     }
 
     rate = EaseCubicOut((Clamp(t, 1.23, 1.41) - 1.23) * 5);
     if (rate > 1e-4) {
         LeafR[5].y = -0.05;
-        GenerateAnchoredBezier(&Leaf4Scaled, LeafR, 2, 12,
+        GenerateAnchoredBezier(&Leaf4Scaled, LeafR, 2, OvO,
             (Vector2){offset.x - 6 * scale, offset.y - 82 * scale},
             (Vector2){0, 0.5}, 60 * scale * rate, 60 * scale * rate,
             -0.4 + easeCycle(t + 2, 2.71, 0.03));
-        DrawPolyFilledConcave(Leaf4Scaled, 25, GRAY_8);
+        DrawPolyFilledConcave(Leaf4Scaled, OvO * 2 + 1, GRAY_8);
     }
 
     t -= 2.5;
