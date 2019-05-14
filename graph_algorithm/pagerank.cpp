@@ -17,17 +17,18 @@ std::vector<double> Graph::pagerank(unsigned nIter, bool normalize)
 		}
 	}
 	unsigned N = edge.size();
-	std::vector<double> last(N, 1.0/N);
-	std::vector<double> next(N, 0);
+	std::vector<double> curr(N, 1.0/N);
+	std::vector<double> next;
 	while (nIter--)
 	{
+		next = std::vector<double>(N, 0);
 #pragma omp parallel for collapse(2)
 		for (unsigned i=0; i<N; ++i)
 			for (auto const& p: trans[i])
-				next[p.v] += p.w * last[i];
-		std::swap(last, next);
+				next[p.v] += p.w * curr[i];
+		curr = std::move(next);
 	}
 	if (normalize) delete(&trans);
-	return last;
+	return curr;
 }
 
