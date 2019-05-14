@@ -28,6 +28,6 @@ std::vector<double> Graph::pagerank(unsigned nIter, bool normalize)
 		std::swap(last, next);
 	}
 	if (normalize) delete(&trans);
-	return next;
+	return last;
 }
 
