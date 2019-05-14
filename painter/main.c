@@ -48,7 +48,7 @@ static inline float easeCycle(float x, float period, float amplitude)
 
 void DrawMainScreen()
 {
-    ClearBackground(WHITE);
+    ClearBackground(GRAY_2);
 
 #define quq "Nothing for now   o(' ~ ')o"
     Vector2 sz = MeasureTextEx(font, quq, 64, 0);
@@ -66,12 +66,12 @@ void DrawIcon(Vector2 offset, float scale, float t)
     DrawLineEx(
         (Vector2){offset.x - 200 * scale * rate, offset.y},
         (Vector2){offset.x + 200 * scale * rate, offset.y},
-        3, DARKGRAY);
+        3, GRAY_8);
 
     rate = EaseElasticOut(Clamp(t, 0.3, 1.3) - 0.3, 0.3);
     GenerateAnchoredBezier(&TrunkScaled, Trunk, 3, 12,
         offset, (Vector2){0.5, 1}, 120 * scale, 120 * scale * rate, 0);
-    DrawPolyFilledConcave(TrunkScaled, 37, DARKGRAY);
+    DrawPolyFilledConcave(TrunkScaled, 37, GRAY_8);
 
     rate = EaseCubicOut((Clamp(t, 1.05, 1.25) - 1.05) * 5);
     if (rate > 1e-4) {
@@ -80,7 +80,7 @@ void DrawIcon(Vector2 offset, float scale, float t)
             (Vector2){offset.x + 2 * scale, offset.y - 86 * scale},
             (Vector2){1, 0.5}, 70 * scale * rate, 70 * scale * rate,
             0 + easeCycle(t, 2.51, 0.025));
-        DrawPolyFilledConcave(Leaf1Scaled, 25, DARKGRAY);
+        DrawPolyFilledConcave(Leaf1Scaled, 25, GRAY_8);
     }
 
     rate = EaseCubicOut((Clamp(t, 0.8, 1.05) - 0.8) * 4);
@@ -90,7 +90,7 @@ void DrawIcon(Vector2 offset, float scale, float t)
             (Vector2){offset.x + 7 * scale, offset.y - 86 * scale},
             (Vector2){1, 0.5}, 80 * scale * rate, 80 * scale * rate,
             -0.4 + easeCycle(t + 3, 3.51, 0.035));
-        DrawPolyFilledConcave(Leaf2Scaled, 25, DARKGRAY);
+        DrawPolyFilledConcave(Leaf2Scaled, 25, GRAY_8);
     }
 
     rate = EaseCubicOut((Clamp(t, 0.92, 1.17) - 0.92) * 4);
@@ -100,7 +100,7 @@ void DrawIcon(Vector2 offset, float scale, float t)
             (Vector2){offset.x - 6 * scale, offset.y - 82 * scale},
             (Vector2){0, 0.5}, 80 * scale * rate, 80 * scale * rate,
             +0.1 + easeCycle(t + 1, 3.38, 0.04));
-        DrawPolyFilledConcave(Leaf3Scaled, 25, DARKGRAY);
+        DrawPolyFilledConcave(Leaf3Scaled, 25, GRAY_8);
     }
 
     rate = EaseCubicOut((Clamp(t, 1.23, 1.41) - 1.23) * 5);
@@ -110,7 +110,7 @@ void DrawIcon(Vector2 offset, float scale, float t)
             (Vector2){offset.x - 6 * scale, offset.y - 82 * scale},
             (Vector2){0, 0.5}, 60 * scale * rate, 60 * scale * rate,
             -0.4 + easeCycle(t + 2, 2.71, 0.03));
-        DrawPolyFilledConcave(Leaf4Scaled, 25, DARKGRAY);
+        DrawPolyFilledConcave(Leaf4Scaled, 25, GRAY_8);
     }
 
     t -= 2.5;
@@ -128,30 +128,30 @@ void DrawIcon(Vector2 offset, float scale, float t)
             p1 = Vector2Rotate(p1, o, rate / 100);
             p2 = Vector2Rotate(p2, o, rate / 100);
             p3 = Vector2Rotate(p3, o, rate / 100);
-            DrawTriangle(p2, p1, p3, WHITE);
-            DrawLineEx(p1, p2, 3, DARKGRAY);
-            DrawLineEx(p2, p3, 3, DARKGRAY);
-            DrawLineEx(p3, p1, 3, DARKGRAY);
+            DrawTriangle(p2, p1, p3, GRAY_2);
+            DrawLineEx(p1, p2, 3, GRAY_8);
+            DrawLineEx(p2, p3, 3, GRAY_8);
+            DrawLineEx(p3, p1, 3, GRAY_8);
         }
 
         rate = EaseElasticOut(Min(t, 0.25) * 4, 0.8);
-        DrawCircleFilledOutline(p1, 8 * rate * scale, WHITE, DARKGRAY);
+        DrawCircleFilledOutline(p1, 8 * rate * scale, GRAY_2, GRAY_8);
         rate = EaseElasticOut((Clamp(t, 0.07, 0.35) - 0.07) * 4, 0.8);
-        DrawCircleFilledOutline(p2, 8 * rate * scale, WHITE, DARKGRAY);
+        DrawCircleFilledOutline(p2, 8 * rate * scale, GRAY_2, GRAY_8);
         rate = EaseElasticOut((Clamp(t, 0.12, 0.35) - 0.12) * 4, 0.8);
-        DrawCircleFilledOutline(p3, 8 * rate * scale, WHITE, DARKGRAY);
+        DrawCircleFilledOutline(p3, 8 * rate * scale, GRAY_2, GRAY_8);
 
         if (t >= 3) {
             DrawMainScreen();
             if (t < 3.25)
-                DrawRectangle(0, 0, SCR_W, SCR_H, Fade(WHITE, (3.25 - t) * 4));
+                DrawRectangle(0, 0, SCR_W, SCR_H, Fade(GRAY_2, (3.25 - t) * 4));
         }
     }
 }
 
 static inline void DrawStartupScreen()
 {
-    ClearBackground((Color){240, 255, 249});
+    ClearBackground(LIME_1);
 
     float t = GetTime();
     if (t < 0.3) return;
@@ -162,7 +162,7 @@ static inline void DrawStartupScreen()
     Vector2 sz = MeasureTextEx(font, REPO_TITLE, 64, 0);
     DrawTextEx(font, REPO_TITLE,
         (Vector2){(SCR_W - sz.x) / 2, SCR_H * (0.52 + rate * 0.02)},
-        64, 0, Fade(DARKGRAY, rate));
+        64, 0, Fade(GRAY_8, rate));
 
     DrawIcon((Vector2){SCR_W / 2, SCR_H * (0.58 - rate * 0.05)}, SCR_W / 900.0, t);
 }

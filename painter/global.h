@@ -6,6 +6,15 @@
 #define SCR_W   1200
 #define SCR_H   720
 
+#include "pal.h"
+
+#define ColorLerp(__a, __b, __t) ((Color) { \
+    ((__a).r + (int)((__t) * ((__b).r - (__a).r) + 0.5)), \
+    ((__a).g + (int)((__t) * ((__b).g - (__a).g) + 0.5)), \
+    ((__a).b + (int)((__t) * ((__b).b - (__a).b) + 0.5)), \
+    ((__a).a + (int)((__t) * ((__b).a - (__a).a) + 0.5)), \
+})
+
 // global.c
 
 extern Font font;
