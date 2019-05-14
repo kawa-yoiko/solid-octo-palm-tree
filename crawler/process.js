@@ -5,14 +5,17 @@ const processResult = {};
 
 processResult.pages = []; // Collection of page IDs
 const pageIdOfTitle = {}; // Mapping from page titles to page IDs
+const titleOfPageId = {}; // Mapping from page IDs to page titles
 
 for (let i = 0; i < dataset.pages.length; i++) {
   processResult.pages.push(dataset.pages[i].pageid);
   pageIdOfTitle[dataset.pages[i].title] = dataset.pages[i].pageid;
+  titleOfPageId[dataset.pages[i].pageid] = dataset.pages[i].title;
 }
 for (let i = 0; i < dataset.files.length; i++) {
   processResult.pages.push(dataset.files[i].pageid);
   pageIdOfTitle[dataset.files[i].title] = dataset.files[i].pageid;
+  titleOfPageId[dataset.files[i].pageid] = dataset.files[i].title;
 }
 
 processResult.edges = [];
@@ -64,14 +67,47 @@ for (let i = 0; i < dataset.pages.length; i++) {
   }
 }
 
-const processResultJSON = JSON.stringify(processResult);
-const filePath = process.argv[2] + '-processed.json';
+// processResult = { pages: [id], edges: [[id, id]] }
 
-fs.writeFile(filePath, processResultJSON, (err) => {
+// processResultText =
+// <N -- number of pages> <M -- number of edges>
+// <title of page 0>
+// <title of page 1>
+// ...
+// <title of page N>
+// <index of first node> <index of second node>
+// <index of first node> <index of second node>
+// ...
+// <index of first node> <index of second node>
+
+let processResultText = '';
+
+processResultText += processResult.pages.length.toString() + ' ' +
+  processResult.edges.length.toString() + '\n';
+
+const indexOfPageId = {};
+
+for (let i = 0; i < processResult.pages.length; i++) {
+  const pageId = processResult.pages[i];
+  indexOfPageId[pageId] = i;
+  processResultText += titleOfPageId[pageId] + '\n';
+}
+
+for (let i = 0; i < processResult.edges.length; i++) {
+  const u = indexOfPageId[processResult.edges[i][0]];
+  const v = indexOfPageId[processResult.edges[i][1]];
+  processResultText += u.toString() + ' ' + v.toString() + '\n';
+}
+
+// Write to file
+
+const filePath = process.argv[2] + '-processed.txt';
+
+fs.writeFile(filePath, processResultText, (err) => {
   if (err) {
     console.log(`Error writing to file ${filePath}: ${err.message}`);
     console.log('Dumping dataset in the console. See below');
-    console.log(processResultJSON);
+    console.log(processResultText);
   } else {
     console.log(`Dataset written to file ${filePath}`);
   }
