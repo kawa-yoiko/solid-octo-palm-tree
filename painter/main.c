@@ -1,4 +1,5 @@
 #include "global.h"
+#include "graph_op.h"
 #include <math.h>
 #include <stdlib.h>
 
@@ -172,6 +173,7 @@ static inline void DrawStartupScreen()
 int main(int argc, char *argv[])
 {
     PalmTreeSetup();
+    InitGraph();
 
     while (!WindowShouldClose()) {
         BeginDrawing();

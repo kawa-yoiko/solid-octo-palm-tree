@@ -34,7 +34,7 @@ void GenerateAnchoredBezier(
     Vector2 offset, Vector2 anchor,
     float scaleX, float scaleY, float rotation);
 
-void DrawPolyFilledConvex(const Vector2 *points, int numPoints, Color color);
+void DrawPolyFilledConcave(const Vector2 *points, int numPoints, Color color);
 
 void DrawCircleFilledOutline(Vector2 c, float r, Color fill, Color outline);
 
