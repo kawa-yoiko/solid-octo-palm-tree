@@ -1,6 +1,9 @@
 #include "graph_op.h"
 #include "../graph_algorithm/graph.h"
+
+extern "C" {
 #include "global.h"
+}
 
 #include <cctype>
 #include <cstdlib>
@@ -47,7 +50,8 @@ void InitGraph(int x, int y, int hw, int hh)
         while (len > 0 && isspace(s[len - 1])) len--;
         s[len] = '\0';
         vertices[i].title = strdup(s);
-        vertices[i].x = i * 3;
+        vertices[i].x = rand() % 1000 - 500;
+        vertices[i].y = rand() % 1000 - 500;
         vertices[i].c = LIME_3;
     }
 
@@ -67,6 +71,27 @@ void VerletTick()
 void VerletDraw()
 {
     DrawRectangle(x - hw, y - hh, hw * 2, hh * 2, Fade(GRAY_3, 0.8));
+
+    DrawLineStripWithChromaBegin();
+    for (int i = 0; i < n; i++) {
+        Vector2 p = (Vector2){
+            (float)(x + vertices[i].x),
+            (float)(y + vertices[i].y)
+        };
+        for (const auto &e : g.edge[i]) {
+            Vector2 q = (Vector2){
+                (float)(x + vertices[e.v].x),
+                (float)(y + vertices[e.v].y)
+            };
+            int dsq = (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y);
+            if (dsq < hw * hw / 2) {
+                DrawLineStripWithChromaAdd(p, q,
+                    dsq < hw * hw / 4 ? GRAY_6 :
+                    Fade(GRAY_6, 2.0 - (float)dsq / (hw * hw / 4)));
+            }
+        }
+    }
+    DrawLineStripWithChromaEnd();
 
     for (int i = 0; i < n; i++) {
         DrawCircle(x + vertices[i].x, y + vertices[i].y, 5, LIME_8);

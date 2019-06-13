@@ -160,7 +160,7 @@ static inline void DrawStartupScreen()
     ClearBackground(LIME_1);
 
     float t = GetTime();
-    t += 4;
+    t += 5.5;
     if (t < 0.3) return;
     t -= 0.3;
 

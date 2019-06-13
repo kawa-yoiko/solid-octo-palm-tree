@@ -245,3 +245,21 @@ void DrawCircleFilledOutline(Vector2 c, float r, Color fill, Color outline)
     DrawCircleV(c, r + 3, outline);
     DrawCircleV(c, r, fill);
 }
+
+void DrawLineStripWithChromaBegin()
+{
+    // XXX: Check possible buffer overflow with rlCheckBufferLimit
+    rlBegin(RL_LINES);
+}
+
+void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, Color c)
+{
+    rlColor4ub(c.r, c.g, c.b, c.a);
+    rlVertex2f(p.x, p.y);
+    rlVertex2f(q.x, q.y);
+}
+
+void DrawLineStripWithChromaEnd()
+{
+    rlEnd();
+}
