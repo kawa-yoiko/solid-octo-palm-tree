@@ -39,7 +39,7 @@ void DrawPolyFilledConcave(const Vector2 *points, int numPoints, Color color);
 void DrawCircleFilledOutline(Vector2 c, float r, Color fill, Color outline);
 
 void DrawLineStripWithChromaBegin();
-void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, Color c);
+void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, float d, float s, Color c);
 void DrawLineStripWithChromaEnd();
 
 #include "easings.h"

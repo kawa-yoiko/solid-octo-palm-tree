@@ -249,14 +249,26 @@ void DrawCircleFilledOutline(Vector2 c, float r, Color fill, Color outline)
 void DrawLineStripWithChromaBegin()
 {
     // XXX: Check possible buffer overflow with rlCheckBufferLimit
-    rlBegin(RL_LINES);
+    rlBegin(RL_TRIANGLES);
 }
 
-void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, Color c)
+void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, float d, float s, Color c)
 {
+    float dx = (q.x - p.x) / d, dy = (q.y - p.y) / d;
+
     rlColor4ub(c.r, c.g, c.b, c.a);
-    rlVertex2f(p.x, p.y);
-    rlVertex2f(q.x, q.y);
+    rlVertex2f(q.x + dy * s / 2, q.y - dx * s / 2);
+    rlColor4ub(c.r, c.g, c.b, c.a);
+    rlVertex2f(p.x + dy * s / 2, p.y - dx * s / 2);
+    rlColor4ub(c.r, c.g, c.b, c.a);
+    rlVertex2f(p.x - dy * s / 2, p.y + dx * s / 2);
+
+    rlColor4ub(c.r, c.g, c.b, c.a);
+    rlVertex2f(p.x - dy * s / 2, p.y + dx * s / 2);
+    rlColor4ub(c.r, c.g, c.b, c.a);
+    rlVertex2f(q.x - dy * s / 2, q.y + dx * s / 2);
+    rlColor4ub(c.r, c.g, c.b, c.a);
+    rlVertex2f(q.x + dy * s / 2, q.y - dx * s / 2);
 }
 
 void DrawLineStripWithChromaEnd()

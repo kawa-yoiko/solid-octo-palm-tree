@@ -6,6 +6,7 @@ extern "C" {
 }
 
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 
@@ -66,6 +67,10 @@ void InitGraph(int x, int y, int hw, int hh)
 
 void VerletTick()
 {
+    for (int i = 0; i < n; i++) {
+        vertices[i].x += rand() % 5 - 2;
+        vertices[i].y += rand() % 5 - 2;
+    }
 }
 
 void VerletDraw()
@@ -86,6 +91,7 @@ void VerletDraw()
             int dsq = (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y);
             if (dsq < hw * hw / 2) {
                 DrawLineStripWithChromaAdd(p, q,
+                    sqrtf(dsq), 2.5,
                     dsq < hw * hw / 4 ? GRAY_6 :
                     Fade(GRAY_6, 2.0 - (float)dsq / (hw * hw / 4)));
             }
