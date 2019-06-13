@@ -99,7 +99,12 @@ void VerletDraw()
     }
     DrawLineStripWithChromaEnd();
 
+    DrawCirclesBegin(5, 6);
     for (int i = 0; i < n; i++) {
-        DrawCircle(x + vertices[i].x, y + vertices[i].y, 5, LIME_8);
+        DrawCirclesAdd((Vector2){
+            (float)(x + vertices[i].x),
+            (float)(y + vertices[i].y)
+        }, LIME_8);
     }
+    DrawCirclesEnd();
 }

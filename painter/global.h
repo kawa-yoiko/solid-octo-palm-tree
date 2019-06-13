@@ -42,6 +42,10 @@ void DrawLineStripWithChromaBegin();
 void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, float d, float s, Color c);
 void DrawLineStripWithChromaEnd();
 
+void DrawCirclesBegin(float r, int segs);
+void DrawCirclesAdd(Vector2 p, Color c);
+void DrawCirclesEnd();
+
 #include "easings.h"
 
 #include "math_ext.h"

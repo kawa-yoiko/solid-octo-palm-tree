@@ -248,12 +248,17 @@ void DrawCircleFilledOutline(Vector2 c, float r, Color fill, Color outline)
 
 void DrawLineStripWithChromaBegin()
 {
-    // XXX: Check possible buffer overflow with rlCheckBufferLimit
     rlBegin(RL_TRIANGLES);
 }
 
 void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, float d, float s, Color c)
 {
+    if (rlCheckBufferLimit(6)) {
+        rlEnd();
+        rlglDraw();
+        rlBegin(RL_TRIANGLES);
+    }
+
     float dx = (q.x - p.x) / d, dy = (q.y - p.y) / d;
 
     rlColor4ub(c.r, c.g, c.b, c.a);
@@ -272,6 +277,51 @@ void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, float d, float s, Color c)
 }
 
 void DrawLineStripWithChromaEnd()
+{
+    rlEnd();
+}
+
+static int circleSegs;
+static float sinTable[64], cosTable[64];
+
+// Modified from DrawCircleSector()
+void DrawCircleSectorBatch(Vector2 center, Color color)
+{
+    if (rlCheckBufferLimit(3*circleSegs)) {
+        // XXX: This does not work as expected...
+        rlEnd();
+        rlglDraw();
+        rlBegin(RL_TRIANGLES);
+    }
+
+    //rlBegin(RL_TRIANGLES);
+        for (int i = 0; i < circleSegs; i++)
+        {
+            rlColor4ub(color.r, color.g, color.b, color.a);
+
+            rlVertex2f(center.x, center.y);
+            rlVertex2f(center.x + sinTable[i], center.y + cosTable[i]);
+            rlVertex2f(center.x + sinTable[i + 1], center.y + cosTable[i + 1]);
+        }
+    //rlEnd();
+}
+
+void DrawCirclesBegin(float r, int segs)
+{
+    circleSegs = segs;
+    for (int i = 0; i <= segs; i++) {
+        sinTable[i] = sinf(M_PI * 2 / segs * i) * r;
+        cosTable[i] = cosf(M_PI * 2 / segs * i) * r;
+    }
+    rlBegin(RL_TRIANGLES);
+}
+
+void DrawCirclesAdd(Vector2 p, Color c)
+{
+    DrawCircleSectorBatch(p, c);
+}
+
+void DrawCirclesEnd()
 {
     rlEnd();
 }
