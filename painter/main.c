@@ -57,6 +57,9 @@ void DrawMainScreen()
         (Vector2){(SCR_W - sz.x) / 2, (SCR_H - sz.y) / 2},
         64, 0, LIGHTGRAY);
 #undef quq
+
+    VerletTick();
+    VerletDraw();
 }
 
 void DrawIcon(Vector2 offset, float scale, float t)
@@ -157,6 +160,7 @@ static inline void DrawStartupScreen()
     ClearBackground(LIME_1);
 
     float t = GetTime();
+    t += 4;
     if (t < 0.3) return;
     t -= 0.3;
 
@@ -173,7 +177,7 @@ static inline void DrawStartupScreen()
 int main(int argc, char *argv[])
 {
     PalmTreeSetup();
-    InitGraph();
+    InitGraph(SCR_W * 0.35, SCR_H * 0.5, SCR_W * 0.35, SCR_H * 0.5);
 
     while (!WindowShouldClose()) {
         BeginDrawing();
