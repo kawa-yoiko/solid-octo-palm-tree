@@ -288,7 +288,6 @@ static float sinTable[64], cosTable[64];
 void DrawCircleSectorBatch(Vector2 center, Color color)
 {
     if (rlCheckBufferLimit(3 * circleSegs)) {
-        // XXX: This does not work as expected...
         rlEnd();
         rlglDraw();
         rlBegin(RL_TRIANGLES);
