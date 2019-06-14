@@ -17,7 +17,7 @@ static int x, y, hw, hh;
 
 struct GraphVertex {
     char *title;
-    double x, y, vx, vy;
+    float x, y, vx, vy;
     Color c;
     GraphVertex()
       : title(nullptr), x(0), y(0), vx(0), vy(0), c({0, 0, 0, 0}) { }
@@ -67,6 +67,36 @@ void InitGraph(int x, int y, int hw, int hh)
 
 void VerletTick()
 {
+    const float dt = 1.f / 60;
+    const float ALPHA = 1.f;
+
+    // Link force
+    for (int u = 0; u < n; u++)
+        for (const auto &e : g.edge[u]) {
+            int v = e.v;
+            float dx = (vertices[v].x + vertices[v].vx) - (vertices[u].x + vertices[u].vx);
+            float dy = (vertices[v].y + vertices[v].vy) - (vertices[u].y + vertices[u].vy);
+            float l = sqrtf(dx * dx + dy * dy);
+            if (fabsf(l) <= 1e-6) l = 1e-6;
+            //l = (l - 30) / l * ALPHA * 1;
+            l -= 180;
+            if (l <= 5) continue;
+            l = 1.0 / l;
+            dx *= l;
+            dy *= l;
+            float b = 0.5;
+            vertices[v].vx -= dx * b;
+            vertices[v].vy -= dy * b;
+            vertices[u].vx += dx * (1 - b);
+            vertices[u].vy += dy * (1 - b);
+        }
+
+    // Repulsive force
+
+    for (int u = 0; u < n; u++) {
+        vertices[u].x += vertices[u].vx * dt;
+        vertices[u].y += vertices[u].vy * dt;
+    }
 }
 
 void VerletDraw()

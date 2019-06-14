@@ -149,8 +149,10 @@ void DrawIcon(Vector2 offset, float scale, float t)
 
         if (t >= 3) {
             DrawMainScreen();
-            if (t < 3.25)
+            if (t < 3.25) {
+                rlglDraw();
                 DrawRectangle(0, 0, SCR_W, SCR_H, Fade(GRAY_2, (3.25 - t) * 4));
+            }
         }
     }
 }
@@ -160,7 +162,6 @@ static inline void DrawStartupScreen()
     ClearBackground(LIME_1);
 
     float t = GetTime();
-    t += 5.5;
     if (t < 0.3) return;
     t -= 0.3;
 
