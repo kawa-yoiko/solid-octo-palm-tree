@@ -51,8 +51,8 @@ void InitGraph(int x, int y, int hw, int hh)
         while (len > 0 && isspace(s[len - 1])) len--;
         s[len] = '\0';
         vertices[i].title = strdup(s);
-        vertices[i].x = rand() % 1000 - 500;
-        vertices[i].y = rand() % 1000 - 500;
+        vertices[i].x = sin(M_PI * 2 * i / n) * 400;
+        vertices[i].y = cos(M_PI * 2 * i / n) * 400;
         vertices[i].c = LIME_3;
     }
 
@@ -67,10 +67,6 @@ void InitGraph(int x, int y, int hw, int hh)
 
 void VerletTick()
 {
-    for (int i = 0; i < n; i++) {
-        vertices[i].x += rand() % 5 - 2;
-        vertices[i].y += rand() % 5 - 2;
-    }
 }
 
 void VerletDraw()
