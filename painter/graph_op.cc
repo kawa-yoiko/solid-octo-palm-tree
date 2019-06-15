@@ -54,14 +54,23 @@ void InitGraph(int x, int y, int hw, int hh)
     char s[1024];
     fgets(s, sizeof s, f);  // Ignore a newline
 
+    int perm[n];
+    for (int i = 0; i < n; i++) perm[i] = i;
+    for (int i = 1; i < n; i++)
+        for (int j = 101; j <= 130; j++) {
+            int r = j * (j + 3) + 100000 / j + 1928374655 % (j * j * (j + 24) + 9997);
+            std::swap(perm[i], perm[r % (i + 1)]);
+        }
+    for (int i = 0; i < n; i++) printf("%d%c", perm[i], i == n - 1 ? '\n' : ' ');
+
     for (int i = 0; i < n; i++) {
         fgets(s, sizeof s, f);
         int len = strlen(s);
         while (len > 0 && isspace(s[len - 1])) len--;
         s[len] = '\0';
         vert[i].title = strdup(s);
-        vert[i].x = sin(M_PI * 2 * i / n) * 400;
-        vert[i].y = cos(M_PI * 2 * i / n) * 400;
+        vert[i].x = sin(M_PI * 2 * perm[i] / n) * 400;
+        vert[i].y = cos(M_PI * 2 * perm[i] / n) * 400;
         vert[i].c = LIME_3;
     }
 
