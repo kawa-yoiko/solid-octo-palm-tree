@@ -79,6 +79,7 @@ void VerletTick()
     const float dt = 1.f / 60;
     const float ALPHA = 4.f;
     const float BETA = 60.f;
+    const float GAMMA = 0.06f;
 
     // Integration (1)
     for (int u = 0; u < n; u++) {
@@ -112,26 +113,22 @@ void VerletTick()
         }
 
     // Repulsive force
-    /*for (int u = 0; u < n; u++)
-        for (int v = 0; v < n; v++) if (u != v) {
-            float dx = (vert[v].x + vert[v].vx) - (vert[u].x + vert[u].vx);
-            float dy = (vert[v].y + vert[v].vy) - (vert[u].y + vert[u].vy);
-            float dsq = dx * dx + dy * dy;
-            float d32 = dsq * sqrtf(dsq);
-            if (fabsf(d32) <= 1) d32 = 1;
-            dx *= BETA / d32;
-            dy *= BETA / d32;
-            vert[u].ax -= dx;
-            vert[u].ay -= dy;
-            vert[v].ax += dx;
-            vert[v].ay += dy;
-        }*/
-
     BarnesHut::Rebuild(n);
     for (int u = 0; u < n; u++) {
         auto f = BarnesHut::Get(vert[u].x, vert[u].y);
         vert[u].ax += f.first * BETA;
         vert[u].ay += f.second * BETA;
+    }
+
+    // Radial force
+    for (int u = 0; u < n; u++) {
+        float l = sqrtf(vert[u].x * vert[u].x + vert[u].y * vert[u].y);
+        if (fabsf(l) <= 1e-6) l = 1e-6;
+        float ux = vert[u].x / l;
+        float uy = vert[u].y / l;
+        float diff = (360 - l);
+        vert[u].ax += diff * ux * GAMMA;
+        vert[u].ay += diff * uy * GAMMA;
     }
 
     // Integration (2)

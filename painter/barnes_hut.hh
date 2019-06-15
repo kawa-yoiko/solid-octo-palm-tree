@@ -24,7 +24,7 @@ static inline int Quadrant(float x, float y)
     return ((int)(x >= 0) << 1) | (y >= 0);
 }
 
-static inline int Build(int l, int r, float x1, float y1, float x2, float y2)
+static inline int Build(int d, int l, int r, float x1, float y1, float x2, float y2)
 {
     // Create a new node
     if (tsz == t.size()) t.resize(t.size() * 3 / 2 + 1);
@@ -45,10 +45,14 @@ static inline int Build(int l, int r, float x1, float y1, float x2, float y2)
         ytot += vert[seq[i]].y;
     }
 
-    if (r - l <= 1) {
+    if (r - l <= 1 || d >= 20) {
         for (int i = 0; i < 4; i++) t[u].child[i] = -1;
         t[u].cx = xtot;
         t[u].cy = ytot;
+        if (r - l > 1) {
+            t[u].cx /= (r - l);
+            t[u].cy /= (r - l);
+        }
         return u;
     }
 
@@ -77,10 +81,10 @@ static inline int Build(int l, int r, float x1, float y1, float x2, float y2)
     for (int i = l; i < r; i++) seq[i] = tmp[i - l];
 
     // Recurse
-    t[u].child[0] = Build(l, l + cnt[0], x1, y1, x0, y0);
-    t[u].child[1] = Build(l + cnt[0], l + cnt[1], x1, y0, x0, y2);
-    t[u].child[2] = Build(l + cnt[1], l + cnt[2], x0, y1, x2, y0);
-    t[u].child[3] = Build(l + cnt[2], r, x0, y0, x2, y2);
+    t[u].child[0] = Build(d + 1, l, l + cnt[0], x1, y1, x0, y0);
+    t[u].child[1] = Build(d + 1, l + cnt[0], l + cnt[1], x1, y0, x0, y2);
+    t[u].child[2] = Build(d + 1, l + cnt[1], l + cnt[2], x0, y1, x2, y0);
+    t[u].child[3] = Build(d + 1, l + cnt[2], r, x0, y0, x2, y2);
 
     return u;
 }
@@ -101,7 +105,7 @@ static inline void Rebuild(int n)
 
     t.resize(16);
     tsz = 0;
-    Build(0, n, x1, y1, x2, y2);
+    Build(0, 0, n, x1, y1, x2, y2);
 }
 
 float qx, qy;
