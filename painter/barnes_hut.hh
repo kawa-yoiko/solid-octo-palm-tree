@@ -1,7 +1,5 @@
 namespace BarnesHut {
 
-static const float THETA = 0.9;
-
 // Quadtree node
 
 struct Node {
@@ -109,6 +107,7 @@ static inline void Rebuild(int n)
 }
 
 float qx, qy;
+float thetasq;
 
 static inline std::pair<float, float> Traverse(int u)
 {
@@ -116,7 +115,7 @@ static inline std::pair<float, float> Traverse(int u)
         (qx - t[u].cx) * (qx - t[u].cx) +
         (qy - t[u].cy) * (qy - t[u].cy);
     if (fabsf(dsq) <= 1e-6) return {0, 0};
-    if (t[u].w * t[u].w / dsq < THETA * THETA || t[u].child[0] == -1) {
+    if (t[u].w * t[u].w / dsq < thetasq || t[u].child[0] == -1) {
         // Single body w.r.t. the query point
         float d32 = dsq * sqrtf(dsq);
         float unit = t[u].tot / d32;
@@ -136,9 +135,10 @@ static inline std::pair<float, float> Traverse(int u)
     return result;
 }
 
-static inline std::pair<float, float> Get(float x, float y)
+static inline std::pair<float, float> Get(float x, float y, float theta = 0.9)
 {
     qx = x; qy = y;
+    thetasq = theta * theta;
     return Traverse(0);
 }
 

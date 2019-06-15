@@ -19,11 +19,12 @@ static int x, y, hw, hh;
 
 struct GraphVertex {
     char *title;
-    float x, y, vx, vy, ax, ay, ax0, ay0;
+    float x, y, vx, vy, ax, ay, ax0, ay0, fx, fy;
     Color c;
     GraphVertex()
       : title(nullptr),
         x(0), y(0), vx(0), vy(0), ax(0), ay(0), ax0(0), ay0(0),
+        fx(NAN), fy(NAN),
         c({0, 0, 0, 0}) { }
     ~GraphVertex() { if (title) free(title); }
 };
@@ -83,37 +84,62 @@ void InitGraph(int x, int y, int hw, int hh)
     fclose(f);
 }
 
+static float _rate = 1.0;
+static int _tick = 120;
+
+void VerletResetRate()
+{
+    _rate = 1.0;
+    _tick = 120;
+}
+
+void VerletSetFix(int id, float x, float y)
+{
+    vert[id].fx = x;
+    vert[id].fy = y;
+}
+
+void VerletCancelFix(int id)
+{
+    VerletSetFix(id, NAN, NAN);
+}
+
 void VerletTick()
 {
+    if (_rate <= 0.05) return;
+
     const float dt = 1.f / 60;
-    const float ALPHA = 4.f;
-    const float BETA = 60.f;
+    const float ALPHA = 0.5f;
+    const float BETA = 300.f;
     const float GAMMA = 0.06f;
 
     // Integration (1)
     for (int u = 0; u < n; u++) {
-        vert[u].x += (vert[u].vx + vert[u].ax / 2 * dt) * dt;
-        vert[u].y += (vert[u].vy + vert[u].ay / 2 * dt) * dt;
-        vert[u].ax0 = vert[u].ax;
-        vert[u].ay0 = vert[u].ay;
-        vert[u].ax = vert[u].ay = 0;
+        if (isnan(vert[u].fx)) {
+            vert[u].x += (vert[u].vx + vert[u].ax / 2 * dt) * dt;
+            vert[u].y += (vert[u].vy + vert[u].ay / 2 * dt) * dt;
+            vert[u].ax0 = vert[u].ax;
+            vert[u].ay0 = vert[u].ay;
+            vert[u].ax = vert[u].ay = 0;
+        } else {
+            vert[u].x = vert[u].fx;
+            vert[u].y = vert[u].fy;
+            vert[u].ax0 = vert[u].ax = vert[u].vx =
+            vert[u].ay0 = vert[u].ay = vert[u].vy = 0;
+        }
     }
 
     // Link force
     for (int u = 0; u < n; u++)
         for (const auto &e : g.edge[u]) {
             int v = e.v;
-            float dx = (vert[v].x + vert[v].vx) - (vert[u].x + vert[u].vx);
-            float dy = (vert[v].y + vert[v].vy) - (vert[u].y + vert[u].vy);
+            float dx = vert[v].x - vert[u].x;
+            float dy = vert[v].y - vert[u].y;
             float l = sqrtf(dx * dx + dy * dy);
             if (fabsf(l) <= 1e-6) l = 1e-6;
             float rate = (l - 90) / l;
             dx *= rate * ALPHA;
             dy *= rate * ALPHA;
-            if (dx >= 100) dx = 100;
-            if (dy >= 100) dy = 100;
-            if (dx <= -100) dx = -100;
-            if (dy <= -100) dy = -100;
             float b = 0.5;
             vert[v].ax -= dx * b;
             vert[v].ay -= dy * b;
@@ -124,7 +150,7 @@ void VerletTick()
     // Repulsive force
     BarnesHut::Rebuild(n);
     for (int u = 0; u < n; u++) {
-        auto f = BarnesHut::Get(vert[u].x, vert[u].y);
+        auto f = BarnesHut::Get(vert[u].x, vert[u].y, _rate >= 0.5 ? 0.9 : 2);
         vert[u].ax += f.first * BETA;
         vert[u].ay += f.second * BETA;
     }
@@ -142,9 +168,19 @@ void VerletTick()
 
     // Integration (2)
     for (int u = 0; u < n; u++) {
-        vert[u].vx += (vert[u].ax + vert[u].ax0) / 2 * dt;
-        vert[u].vy += (vert[u].ay + vert[u].ay0) / 2 * dt;
+        if (isnan(vert[u].fx)) {
+            vert[u].vx += (vert[u].ax + vert[u].ax0) / 2 * dt;
+            vert[u].vy += (vert[u].ay + vert[u].ay0) / 2 * dt;
+            vert[u].vx *= _rate;
+            vert[u].vy *= _rate;
+            vert[u].ax *= _rate;
+            vert[u].ay *= _rate;
+        } else {
+            vert[u].ax = vert[u].ay = 0;
+        }
     }
+
+    if (_tick > 0) _tick--; else _rate *= 0.99;
 
     // Centre "force"
     for (int u = 0; u < n; u++) {

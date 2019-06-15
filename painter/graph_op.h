@@ -10,6 +10,10 @@ void InitGraph(int x, int y, int hw, int hh);
 void VerletTick();
 void VerletDraw();
 
+void VerletResetRate();
+void VerletSetFix(int id, float x, float y);
+void VerletCancelFix(int id);
+
 #ifdef __cplusplus
 }
 #endif

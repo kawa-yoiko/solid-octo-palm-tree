@@ -58,6 +58,7 @@ void DrawMainScreen()
         64, 0, LIGHTGRAY);
 #undef quq
 
+    //VerletSetFix(0, 0, 0);
     VerletTick();
     VerletDraw();
 }
