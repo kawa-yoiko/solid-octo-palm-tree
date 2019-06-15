@@ -9,6 +9,8 @@ extern "C" {
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
+#include <utility>
 
 static int n, m;
 static Graph g;
@@ -28,9 +30,14 @@ struct GraphVertex {
 
 static std::vector<GraphVertex> vert;
 
+#include "barnes_hut.hh"
+
+#ifndef BARNES_HUT_TEST
+
 void InitGraph(int x, int y, int hw, int hh)
 {
     FILE *f = fopen("../crawler/cavestory-processed.txt", "r");
+    //FILE *f = fopen("graph.txt", "r");
     if (!f) return;
 
     g.edge.clear();
@@ -70,8 +77,8 @@ void InitGraph(int x, int y, int hw, int hh)
 void VerletTick()
 {
     const float dt = 1.f / 60;
-    const float ALPHA = 1.f / 4;
-    const float BETA = 20.f;
+    const float ALPHA = 4.f;
+    const float BETA = 60.f;
 
     // Integration (1)
     for (int u = 0; u < n; u++) {
@@ -93,6 +100,10 @@ void VerletTick()
             float rate = (l - 90) / l;
             dx *= rate * ALPHA;
             dy *= rate * ALPHA;
+            if (dx >= 100) dx = 100;
+            if (dy >= 100) dy = 100;
+            if (dx <= -100) dx = -100;
+            if (dy <= -100) dy = -100;
             float b = 0.5;
             vert[v].ax -= dx * b;
             vert[v].ay -= dy * b;
@@ -101,8 +112,8 @@ void VerletTick()
         }
 
     // Repulsive force
-    for (int u = 0; u < n; u++)
-        for (int v = 0; v < n; v++) {
+    /*for (int u = 0; u < n; u++)
+        for (int v = 0; v < n; v++) if (u != v) {
             float dx = (vert[v].x + vert[v].vx) - (vert[u].x + vert[u].vx);
             float dy = (vert[v].y + vert[v].vy) - (vert[u].y + vert[u].vy);
             float dsq = dx * dx + dy * dy;
@@ -114,7 +125,14 @@ void VerletTick()
             vert[u].ay -= dy;
             vert[v].ax += dx;
             vert[v].ay += dy;
-        }
+        }*/
+
+    BarnesHut::Rebuild(n);
+    for (int u = 0; u < n; u++) {
+        auto f = BarnesHut::Get(vert[u].x, vert[u].y);
+        vert[u].ax += f.first * BETA;
+        vert[u].ay += f.second * BETA;
+    }
 
     // Integration (2)
     for (int u = 0; u < n; u++) {
@@ -162,3 +180,5 @@ void VerletDraw()
     }
     DrawCirclesEnd();
 }
+
+#endif
