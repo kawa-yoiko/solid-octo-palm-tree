@@ -209,11 +209,11 @@ void VerletDraw()
                 (float)(y + vert[e.v].y)
             };
             int dsq = (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y);
-            if (dsq < hw * hw / 2) {
+            if (dsq < hw * hw * 2) {
                 DrawLineStripWithChromaAdd(p, q,
                     sqrtf(dsq), 2.5,
-                    dsq < hw * hw / 4 ? GRAY_6 :
-                    Fade(GRAY_6, 2.0 - (float)dsq / (hw * hw / 4)));
+                    dsq < hw * hw ? GRAY_6 :
+                    Fade(GRAY_6, 2.0 - (float)dsq / (hw * hw)));
             }
         }
     }
