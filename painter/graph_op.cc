@@ -36,8 +36,8 @@ static std::vector<GraphVertex> vert;
 
 void InitGraph(int x, int y, int hw, int hh)
 {
-    //FILE *f = fopen("../crawler/cavestory-processed.txt", "r");
-    FILE *f = fopen("graph.txt", "r");
+    FILE *f = fopen("../crawler/cavestory-processed.txt", "r");
+    //FILE *f = fopen("graph.txt", "r");
     if (!f) return;
 
     g.edge.clear();
@@ -122,7 +122,7 @@ void VerletTick()
     alpha += (alphaTarget - alpha) * alphaDecay;
 
     // Link force
-    /*for (int u = 0; u < n; u++)
+    for (int u = 0; u < n; u++)
         for (const auto &e : g.edge[u]) {
             int v = e.v;
             float dx = (vert[v].x + vert[v].vx) - (vert[u].x + vert[u].vx);
@@ -138,15 +138,30 @@ void VerletTick()
             vert[v].vy -= dy * b;
             vert[u].vx += dx * (1 - b);
             vert[u].vy += dy * (1 - b);
-        }*/
+        }
 
     // Repulsive force
-    BarnesHut::Rebuild(n);
+    for (int u = 0; u < n; u++)
+        for (int v = u + 1; v < n; v++) {
+            float dx = vert[v].x - vert[u].x;
+            float dy = vert[v].y - vert[u].y;
+            if (fabsf(dx) <= 1e-6) dx = jiggle();
+            if (fabsf(dy) <= 1e-6) dy = jiggle();
+            float l = sqrtf(dx * dx + dy * dy);
+            dx /= l;
+            dy /= l;
+            if (l <= 5) l = 5;
+            vert[u].vx -= dx / (l * l) * alpha * 30;
+            vert[u].vy -= dy / (l * l) * alpha * 30;
+            vert[v].vx += dx / (l * l) * alpha * 30;
+            vert[v].vy += dy / (l * l) * alpha * 30;
+        }
+    /*BarnesHut::Rebuild(n);
     for (int u = 0; u < n; u++) {
         auto f = BarnesHut::Get(vert[u].x, vert[u].y);
-        vert[u].vx += f.first * alpha * 30;
-        vert[u].vy += f.second * alpha * 30;
-    }
+        vert[u].vx += f.first * alpha * 10;
+        vert[u].vy += f.second * alpha * 10;
+    }*/
 
     // Integration
     for (int u = 0; u < n; u++) {

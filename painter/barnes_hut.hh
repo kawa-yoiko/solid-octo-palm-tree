@@ -136,7 +136,7 @@ static inline std::pair<float, float> Traverse(int u)
     return result;
 }
 
-static inline std::pair<float, float> Get(float x, float y, float theta = 0.9)
+static inline std::pair<float, float> Get(float x, float y, float theta = 0)
 {
     qx = x; qy = y;
     thetasq = theta * theta;
