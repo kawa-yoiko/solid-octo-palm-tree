@@ -176,6 +176,19 @@ void VerletTick()
             vert[u].vx = vert[u].vy = 0;
         }
     }
+
+    // Keep CM at the centre
+    float sx = 0, sy = 0;
+    for (int u = 0; u < n; u++) {
+        sx += vert[u].x;
+        sy += vert[u].y;
+    }
+    sx /= n;
+    sy /= n;
+    for (int u = 0; u < n; u++) {
+        vert[u].x -= sx;
+        vert[u].y -= sy;
+    }
 }
 
 #if !defined(BARNES_HUT_TEST) && !defined(SIM_TEST)
