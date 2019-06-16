@@ -119,6 +119,7 @@ static inline float linkBias(int u, int v)
 
 void VerletTick()
 {
+    if (alpha < 1e-2) return;
     alpha += (alphaTarget - alpha) * alphaDecay;
 
     // Link force
@@ -141,7 +142,7 @@ void VerletTick()
         }
 
     // Repulsive force
-    for (int u = 0; u < n; u++)
+    /*for (int u = 0; u < n; u++)
         for (int v = u + 1; v < n; v++) {
             float dx = vert[v].x - vert[u].x;
             float dy = vert[v].y - vert[u].y;
@@ -155,13 +156,14 @@ void VerletTick()
             vert[u].vy -= dy / (l * l) * alpha * 30;
             vert[v].vx += dx / (l * l) * alpha * 30;
             vert[v].vy += dy / (l * l) * alpha * 30;
-        }
-    /*BarnesHut::Rebuild(n);
+        }*/
+    float theta = 0.7 + (1 - alpha) * 0.5;
+    BarnesHut::Rebuild(n);
     for (int u = 0; u < n; u++) {
-        auto f = BarnesHut::Get(vert[u].x, vert[u].y);
-        vert[u].vx += f.first * alpha * 10;
-        vert[u].vy += f.second * alpha * 10;
-    }*/
+        auto f = BarnesHut::Get(vert[u].x, vert[u].y, theta);
+        vert[u].vx += f.first * alpha * 30;
+        vert[u].vy += f.second * alpha * 30;
+    }
 
     // Integration
     for (int u = 0; u < n; u++) {

@@ -43,10 +43,11 @@ static inline int Build(int d, int l, int r, float x1, float y1, float x2, float
         ytot += vert[seq[i]].y;
     }
 
-    if (r - l <= 1 || d >= 20) {
+    t[u].cx = xtot;
+    t[u].cy = ytot;
+
+    if (r - l <= 1 || d >= 10) {
         for (int i = 0; i < 4; i++) t[u].child[i] = -1;
-        t[u].cx = xtot;
-        t[u].cy = ytot;
         if (r - l > 1) {
             t[u].cx /= (r - l);
             t[u].cy /= (r - l);
@@ -111,11 +112,13 @@ float thetasq;
 
 static inline std::pair<float, float> Traverse(int u)
 {
+    if (t[u].tot == 0) return {0, 0};
+
     float dsq =
         (qx - t[u].cx) * (qx - t[u].cx) +
         (qy - t[u].cy) * (qy - t[u].cy);
     if (dsq <= 1e-6) return {0, 0};
-    else if (dsq <= 1) dsq = sqrtf(dsq);    // Limit forces for close points
+    else if (dsq <= 25) dsq = 25;   // Limit forces for close points
     if (t[u].w * t[u].w / dsq < thetasq || t[u].child[0] == -1) {
         // Single body w.r.t. the query point
         float d32 = dsq * sqrtf(dsq);
@@ -136,7 +139,7 @@ static inline std::pair<float, float> Traverse(int u)
     return result;
 }
 
-static inline std::pair<float, float> Get(float x, float y, float theta = 0)
+static inline std::pair<float, float> Get(float x, float y, float theta = 0.9)
 {
     qx = x; qy = y;
     thetasq = theta * theta;
