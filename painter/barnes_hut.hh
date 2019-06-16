@@ -114,7 +114,8 @@ static inline std::pair<float, float> Traverse(int u)
     float dsq =
         (qx - t[u].cx) * (qx - t[u].cx) +
         (qy - t[u].cy) * (qy - t[u].cy);
-    if (fabsf(dsq) <= 1e-6) return {0, 0};
+    if (dsq <= 1e-6) return {0, 0};
+    else if (dsq <= 1) dsq = sqrtf(dsq);    // Limit forces for close points
     if (t[u].w * t[u].w / dsq < thetasq || t[u].child[0] == -1) {
         // Single body w.r.t. the query point
         float d32 = dsq * sqrtf(dsq);

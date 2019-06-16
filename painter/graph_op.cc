@@ -122,7 +122,7 @@ void VerletTick()
     alpha += (alphaTarget - alpha) * alphaDecay;
 
     // Link force
-    for (int u = 0; u < n; u++)
+    /*for (int u = 0; u < n; u++)
         for (const auto &e : g.edge[u]) {
             int v = e.v;
             float dx = (vert[v].x + vert[v].vx) - (vert[u].x + vert[u].vx);
@@ -138,7 +138,15 @@ void VerletTick()
             vert[v].vy -= dy * b;
             vert[u].vx += dx * (1 - b);
             vert[u].vy += dy * (1 - b);
-        }
+        }*/
+
+    // Repulsive force
+    BarnesHut::Rebuild(n);
+    for (int u = 0; u < n; u++) {
+        auto f = BarnesHut::Get(vert[u].x, vert[u].y);
+        vert[u].vx += f.first * alpha * 30;
+        vert[u].vy += f.second * alpha * 30;
+    }
 
     // Integration
     for (int u = 0; u < n; u++) {
