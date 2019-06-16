@@ -171,6 +171,8 @@ void VerletTick()
             vert[u].x += vert[u].vx;
             vert[u].y += vert[u].vy;
         } else {
+            vert[u].x = vert[u].fx;
+            vert[u].y = vert[u].fy;
             vert[u].vx = vert[u].vy = 0;
         }
     }
@@ -215,6 +217,40 @@ void VerletDraw()
 }
 
 #endif
+
+static int selVert = -1, px0, py0;
+
+void VerletMousePress(int px, int py)
+{
+    px -= ::x;
+    py -= ::y;
+    int id = -1;
+    float nearest = INFINITY;
+    for (int u = 0; u < n; u++) {
+        float cur = (px - vert[u].x) * (px - vert[u].x)
+            + (py - vert[u].y) * (py - vert[u].y);
+        if (nearest > cur) {
+            nearest = cur;
+            id = u;
+        }
+    }
+    if (nearest <= 10 * 10) {
+        selVert = id;
+        px0 = vert[id].x - (px + ::x);
+        py0 = vert[id].y - (py + ::y);
+    }
+}
+
+void VerletMouseMove(int px, int py)
+{
+    if (selVert != -1) VerletSetFix(selVert, px + px0, py + py0);
+}
+
+void VerletMouseRelease()
+{
+    if (selVert != -1) VerletCancelFix(selVert);
+    selVert = -1;
+}
 
 // g++ graph_op.cc -Og -g -std=c++11 -DSIM_TEST
 #ifdef SIM_TEST

@@ -14,6 +14,10 @@ void VerletResetRate();
 void VerletSetFix(int id, float x, float y);
 void VerletCancelFix(int id);
 
+void VerletMousePress(int px, int py);
+void VerletMouseMove(int px, int py);
+void VerletMouseRelease();
+
 #ifdef __cplusplus
 }
 #endif

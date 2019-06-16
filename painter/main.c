@@ -58,7 +58,15 @@ void DrawMainScreen()
         64, 0, LIGHTGRAY);
 #undef quq
 
-    //VerletSetFix(0, 0, 0);
+    if (IsMouseButtonPressed(0))
+        VerletMousePress(GetMouseX() * 2, GetMouseY() * 2);
+    if (IsMouseButtonDown(0)) {
+        VerletMouseMove(GetMouseX() * 2, GetMouseY() * 2);
+        VerletResetRate();
+    }
+    if (IsMouseButtonReleased(0))
+        VerletMouseRelease();
+
     VerletTick();
     VerletDraw();
 }
