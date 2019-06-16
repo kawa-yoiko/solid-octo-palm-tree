@@ -2,11 +2,7 @@
 const d3 = require('./node_modules/d3-force/dist/d3-force.js');
 
 const n = 10;
-const nodes = [...Array(n).keys()].map((id) => ({
-  x: Math.cos(Math.PI * 2 * id / n) * 50,
-  y: Math.sin(Math.PI * 2 * id / n) * 50,
-  id: id
-}));
+const nodes = [...Array(n).keys()].map((id) => ({id: id}));
 
 const edges = [
   [0, 1], [1, 2], [1, 3], [2, 4],

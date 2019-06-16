@@ -54,14 +54,17 @@ void InitGraph(int x, int y, int hw, int hh)
     char s[1024];
     fgets(s, sizeof s, f);  // Ignore a newline
 
+    const float radius = 10;
+    const float angle = M_PI * (3 - sqrtf(5));
+
     for (int i = 0; i < n; i++) {
         fgets(s, sizeof s, f);
         int len = strlen(s);
         while (len > 0 && isspace(s[len - 1])) len--;
         s[len] = '\0';
         vert[i].title = strdup(s);
-        vert[i].x = cos(M_PI * 2 * i / n) * 50;
-        vert[i].y = sin(M_PI * 2 * i / n) * 50;
+        vert[i].x = cos(angle * i) * radius * sqrtf(i);
+        vert[i].y = sin(angle * i) * radius * sqrtf(i);
         vert[i].c = LIME_3;
     }
 
