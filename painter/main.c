@@ -180,6 +180,7 @@ int main(int argc, char *argv[])
 {
     PalmTreeSetup();
     InitGraph(SCR_W * 0.35, SCR_H * 0.5, SCR_W * 0.35, SCR_H * 0.5);
+    VerletResetRate();
 
     while (!WindowShouldClose()) {
         BeginDrawing();

@@ -19,12 +19,13 @@ static int x, y, hw, hh;
 
 struct GraphVertex {
     char *title;
-    float x, y, vx, vy, ax, ay, ax0, ay0, fx, fy;
+    int deg;
+    float x, y, vx, vy, fx, fy;
     Color c;
     GraphVertex()
       : title(nullptr),
-        x(0), y(0), vx(0), vy(0), ax(0), ay(0), ax0(0), ay0(0),
-        fx(NAN), fy(NAN),
+        deg(0),
+        x(0), y(0), vx(0), vy(0), fx(NAN), fy(NAN),
         c({0, 0, 0, 0}) { }
     ~GraphVertex() { if (title) free(title); }
 };
@@ -33,12 +34,10 @@ static std::vector<GraphVertex> vert;
 
 #include "barnes_hut.hh"
 
-#ifndef BARNES_HUT_TEST
-
 void InitGraph(int x, int y, int hw, int hh)
 {
-    FILE *f = fopen("../crawler/cavestory-processed.txt", "r");
-    //FILE *f = fopen("graph.txt", "r");
+    //FILE *f = fopen("../crawler/cavestory-processed.txt", "r");
+    FILE *f = fopen("graph.txt", "r");
     if (!f) return;
 
     g.edge.clear();
@@ -55,23 +54,14 @@ void InitGraph(int x, int y, int hw, int hh)
     char s[1024];
     fgets(s, sizeof s, f);  // Ignore a newline
 
-    int perm[n];
-    for (int i = 0; i < n; i++) perm[i] = i;
-    for (int i = 1; i < n; i++)
-        for (int j = 101; j <= 130; j++) {
-            int r = j * (j + 3) + 100000 / j + 1928374655 % (j * j * (j + 24) + 9997);
-            std::swap(perm[i], perm[r % (i + 1)]);
-        }
-    for (int i = 0; i < n; i++) printf("%d%c", perm[i], i == n - 1 ? '\n' : ' ');
-
     for (int i = 0; i < n; i++) {
         fgets(s, sizeof s, f);
         int len = strlen(s);
         while (len > 0 && isspace(s[len - 1])) len--;
         s[len] = '\0';
         vert[i].title = strdup(s);
-        vert[i].x = sin(M_PI * 2 * perm[i] / n) * 400;
-        vert[i].y = cos(M_PI * 2 * perm[i] / n) * 400;
+        vert[i].x = cos(M_PI * 2 * i / n) * 50;
+        vert[i].y = sin(M_PI * 2 * i / n) * 50;
         vert[i].c = LIME_3;
     }
 
@@ -79,18 +69,23 @@ void InitGraph(int x, int y, int hw, int hh)
         //fscanf(f, "%d%d%d", &u, &v, &w);
         fscanf(f, "%d%d", &u, &v);
         g.edge[u].push_back(Graph::Edge(v, w));
+        vert[u].deg++;
+        vert[v].deg++;
     }
 
     fclose(f);
 }
 
-static float _rate = 1.0;
-static int _tick = 120;
+static float alpha, alphaMin, alphaDecay, alphaTarget;
+static float velocityDecay;
 
 void VerletResetRate()
 {
-    _rate = 1.0;
-    _tick = 120;
+    alpha = 1.0;
+    alphaMin = 0.001;
+    alphaDecay = 1 - powf(alphaMin, 1.0 / 300);
+    alphaTarget = 0;
+    velocityDecay = 0.6;
 }
 
 void VerletSetFix(int id, float x, float y)
@@ -104,88 +99,58 @@ void VerletCancelFix(int id)
     VerletSetFix(id, NAN, NAN);
 }
 
+static inline float jiggle()
+{
+    return (float)rand() / RAND_MAX * 2e-6 - 1e-6;
+}
+
+static inline float linkStrength(int u, int v)
+{
+    return 1.f / std::min(vert[u].deg, vert[v].deg);
+}
+
+static inline float linkBias(int u, int v)
+{
+    return (float)vert[u].deg / (vert[u].deg + vert[v].deg);
+}
+
 void VerletTick()
 {
-    if (_rate <= 0.05) return;
-
-    const float dt = 1.f / 60;
-    const float ALPHA = 0.5f;
-    const float BETA = 300.f;
-    const float GAMMA = 0.06f;
-
-    // Integration (1)
-    for (int u = 0; u < n; u++) {
-        if (isnan(vert[u].fx)) {
-            vert[u].x += (vert[u].vx + vert[u].ax / 2 * dt) * dt;
-            vert[u].y += (vert[u].vy + vert[u].ay / 2 * dt) * dt;
-            vert[u].ax0 = vert[u].ax;
-            vert[u].ay0 = vert[u].ay;
-            vert[u].ax = vert[u].ay = 0;
-        } else {
-            vert[u].x = vert[u].fx;
-            vert[u].y = vert[u].fy;
-            vert[u].ax0 = vert[u].ax = vert[u].vx =
-            vert[u].ay0 = vert[u].ay = vert[u].vy = 0;
-        }
-    }
+    alpha += (alphaTarget - alpha) * alphaDecay;
 
     // Link force
     for (int u = 0; u < n; u++)
         for (const auto &e : g.edge[u]) {
             int v = e.v;
-            float dx = vert[v].x - vert[u].x;
-            float dy = vert[v].y - vert[u].y;
+            float dx = (vert[v].x + vert[v].vx) - (vert[u].x + vert[u].vx);
+            float dy = (vert[v].y + vert[v].vy) - (vert[u].y + vert[u].vy);
+            if (fabsf(dx) <= 1e-6) dx = jiggle();
+            if (fabsf(dy) <= 1e-6) dy = jiggle();
             float l = sqrtf(dx * dx + dy * dy);
-            if (fabsf(l) <= 1e-6) l = 1e-6;
-            float rate = (l - 90) / l;
-            dx *= rate * ALPHA;
-            dy *= rate * ALPHA;
-            float b = 0.5;
-            vert[v].ax -= dx * b;
-            vert[v].ay -= dy * b;
-            vert[u].ax += dx * (1 - b);
-            vert[u].ay += dy * (1 - b);
+            l = (l - 30) / l * alpha * linkStrength(u, v);
+            dx *= l;
+            dy *= l;
+            float b = linkBias(u, v);
+            vert[v].vx -= dx * b;
+            vert[v].vy -= dy * b;
+            vert[u].vx += dx * (1 - b);
+            vert[u].vy += dy * (1 - b);
         }
 
-    // Repulsive force
-    BarnesHut::Rebuild(n);
-    for (int u = 0; u < n; u++) {
-        auto f = BarnesHut::Get(vert[u].x, vert[u].y, _rate >= 0.5 ? 0.9 : 2);
-        vert[u].ax += f.first * BETA;
-        vert[u].ay += f.second * BETA;
-    }
-
-    // Radial force
-    for (int u = 0; u < n; u++) {
-        float l = sqrtf(vert[u].x * vert[u].x + vert[u].y * vert[u].y);
-        if (fabsf(l) <= 1e-6) l = 1e-6;
-        float ux = vert[u].x / l;
-        float uy = vert[u].y / l;
-        float diff = (360 - l);
-        vert[u].ax += diff * ux * GAMMA;
-        vert[u].ay += diff * uy * GAMMA;
-    }
-
-    // Integration (2)
+    // Integration
     for (int u = 0; u < n; u++) {
         if (isnan(vert[u].fx)) {
-            vert[u].vx += (vert[u].ax + vert[u].ax0) / 2 * dt;
-            vert[u].vy += (vert[u].ay + vert[u].ay0) / 2 * dt;
-            vert[u].vx *= _rate;
-            vert[u].vy *= _rate;
-            vert[u].ax *= _rate;
-            vert[u].ay *= _rate;
+            vert[u].vx *= velocityDecay;
+            vert[u].vy *= velocityDecay;
+            vert[u].x += vert[u].vx;
+            vert[u].y += vert[u].vy;
         } else {
-            vert[u].ax = vert[u].ay = 0;
+            vert[u].vx = vert[u].vy = 0;
         }
     }
-
-    if (_tick > 0) _tick--; else _rate *= 0.99;
-
-    // Centre "force"
-    for (int u = 0; u < n; u++) {
-    }
 }
+
+#if !defined(BARNES_HUT_TEST) && !defined(SIM_TEST)
 
 void VerletDraw()
 {
@@ -223,4 +188,20 @@ void VerletDraw()
     DrawCirclesEnd();
 }
 
+#endif
+
+// g++ graph_op.cc -Og -g -std=c++11 -DSIM_TEST
+#ifdef SIM_TEST
+int main()
+{
+    InitGraph(100, 100, 100, 100);
+    VerletResetRate();
+    for (int i = 0; i < 10; i++) {
+        VerletTick();
+        printf("\n== %d ==\n", i);
+        for (int j = 0; j < n; j++)
+            printf("%.4f %.4f %.4f %.4f\n",
+                vert[j].x, vert[j].y, vert[j].vx, vert[j].vy);
+    }
+}
 #endif
