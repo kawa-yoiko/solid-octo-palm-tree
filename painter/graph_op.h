@@ -17,6 +17,7 @@ void VerletCancelFix(int id);
 void VerletMousePress(int px, int py);
 void VerletMouseMove(int px, int py);
 void VerletMouseRelease();
+void VerletChangeScale(int wheel, int px, int py);
 
 #ifdef __cplusplus
 }

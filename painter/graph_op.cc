@@ -18,6 +18,8 @@ static int n, m;
 static Graph g;
 
 static int x, y, hw, hh;
+static float scale = 1;
+static float sx = 0, sy = 0;
 
 struct GraphVertex {
     char *title;
@@ -213,15 +215,16 @@ void VerletDraw()
     DrawLineStripWithChromaBegin();
     for (int i = 0; i < n; i++) {
         Vector2 p = (Vector2){
-            (float)(x + vert[i].x),
-            (float)(y + vert[i].y)
+            (float)(x + sx + vert[i].x * scale),
+            (float)(y + sy + vert[i].y * scale)
         };
         for (const auto &e : g.edge[i]) {
             Vector2 q = (Vector2){
-                (float)(x + vert[e.v].x),
-                (float)(y + vert[e.v].y)
+                (float)(x + sx + vert[e.v].x * scale),
+                (float)(y + sy + vert[e.v].y * scale)
             };
             int dsq = (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y);
+            dsq *= scale;   // not scale * scale because we'd like to show more
             if (dsq < hw * hw * 2) {
                 DrawLineStripWithChromaAdd(p, q,
                     sqrtf(dsq), 2.5,
@@ -232,12 +235,12 @@ void VerletDraw()
     }
     DrawLineStripWithChromaEnd();
 
-    float radius = 5;
+    float radius = 5 * Lerp(scale, 1, 0.875);
     DrawCirclesBegin(radius, 6);
     for (int i = 0; i < n; i++) {
         Vector2 p = (Vector2){
-            (float)(x + vert[i].x),
-            (float)(y + vert[i].y)
+            (float)(x + sx + vert[i].x * scale),
+            (float)(y + sy + vert[i].y * scale)
         };
         if (p.x > x - hw - radius && p.x < x + hw + radius &&
             p.y > y - hh - radius && p.y < x + hh + radius)
@@ -255,7 +258,10 @@ void VerletDraw()
             Lerp(lastHoverAlpha, 1, (t - hoverTime) / HOVER_FADE_IN_T) :
             (t > unhoverTime) ? (1 - (t - unhoverTime) / HOVER_FADE_OUT_T) : 1;
         Vector2 size = MeasureTextEx(font, vert[hoverID].title, 32, 0);
-        Vector2 pos = (Vector2){x + vert[hoverID].x, y + vert[hoverID].y};
+        Vector2 pos = (Vector2){
+            x + sx + vert[hoverID].x * scale,
+            y + sy + vert[hoverID].y * scale
+        };
         if (t < hoverTime + HOVER_FADE_IN_T && !isnan(lastHoverX)) {
             size = Vector2Lerp(
                 lastHoverSize,
@@ -289,24 +295,25 @@ static inline void FindNearest(int px, int py, int &id, float &dsq)
 
 void VerletMousePress(int px, int py)
 {
-    px -= ::x;
-    py -= ::y;
+    px = (px - ::x - sx) / scale;
+    py = (py - ::y - sy) / scale;
     int id;
     float nearest;
     FindNearest(px, py, id, nearest);
     if (nearest <= 10 * 10) {
         selVert = id;
-        px0 = vert[id].x - (px + ::x);
-        py0 = vert[id].y - (py + ::y);
+        px0 = vert[id].x - px;
+        py0 = vert[id].y - py;
     }
 }
 
 void VerletMouseMove(int px, int py)
 {
+    px = (px - ::x - sx) / scale;
+    py = (py - ::y - sy) / scale;
+
     if (selVert != -1) VerletSetFix(selVert, px + px0, py + py0);
 
-    px -= ::x;
-    py -= ::y;
     int id;
     float nearest;
     FindNearest(px, py, id, nearest);
@@ -315,8 +322,8 @@ void VerletMouseMove(int px, int py)
         if (hoverID != id || !isinf(unhoverTime)) {
             lastHoverAlpha = Clamp(1 - (t - unhoverTime) / HOVER_FADE_OUT_T, 0, 1);
             if (hoverID >= 0 && lastHoverAlpha > 1e-6) {
-                lastHoverX = ::x + vert[hoverID].x;
-                lastHoverY = ::y + vert[hoverID].y;
+                lastHoverX = ::x + sx + vert[hoverID].x * scale;
+                lastHoverY = ::y + sy + vert[hoverID].y * scale;
                 lastHoverSize = MeasureTextEx(font, vert[hoverID].title, 32, 0);
             } else {
                 lastHoverX = NAN;
@@ -335,6 +342,17 @@ void VerletMouseRelease()
 {
     if (selVert != -1) VerletCancelFix(selVert);
     selVert = -1;
+}
+
+void VerletChangeScale(int wheel, int px, int py)
+{
+    px = (px - ::x - sx) / scale;
+    py = (py - ::y - sy) / scale;
+    float newScale = Clamp(scale + (float)wheel / 16, 1, 8);
+    // ::x + sx + px * scale == ::x + sx' + px * scale'
+    sx = sx + px * (scale - newScale);
+    sy = sy + py * (scale - newScale);
+    scale = newScale;
 }
 
 // g++ graph_op.cc -Og -g -std=c++11 -DSIM_TEST
