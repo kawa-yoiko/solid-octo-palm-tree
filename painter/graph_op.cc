@@ -259,8 +259,8 @@ void VerletDraw()
             (float)(x + sx + vert[i].x * scale),
             (float)(y + sy + vert[i].y * scale)
         };
-        if (p.x > x - hw - radius && p.x < x + hw + radius &&
-            p.y > y - hh - radius && p.y < x + hh + radius)
+        if (p.x > -radius && p.x < SCR_W + radius &&
+            p.y > -radius && p.y < SCR_H + radius)
         {
             Color c = LIME_8;
             if (selVert != -1 || t < releaseTime + SEL_FADE_OUT_T) {

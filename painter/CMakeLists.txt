@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11")
 set(source_files
     global.c
     graph_op.cc
+    panel.c
     main.c
     shapes_ext.c
 )

@@ -1,6 +1,11 @@
 #include "global.h"
 #include "graph_op.h"
+#include "panel.h"
+
+#include "rlgl.h"
+
 #include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #define REPO_TITLE "solid-octo-palm-tree"
@@ -47,6 +52,8 @@ static inline float easeCycle(float x, float period, float amplitude)
     return sinf(x / period * 2 * M_PI) * amplitude;
 }
 
+static bool isPanelPressed;
+
 void DrawMainScreen()
 {
     ClearBackground(GRAY_2);
@@ -58,19 +65,31 @@ void DrawMainScreen()
         64, 0, LIGHTGRAY);
 #undef quq
 
-    if (IsMouseButtonPressed(0))
-        VerletMousePress(GetMouseX() * 2, GetMouseY() * 2);
-    if (IsMouseButtonDown(0))
+    if (IsMouseButtonPressed(0)) {
+        isPanelPressed = PanelMousePress(GetMouseX() * 2, GetMouseY() * 2);
+        if (!isPanelPressed)
+            VerletMousePress(GetMouseX() * 2, GetMouseY() * 2);
+    }
+
+    if (IsMouseButtonDown(0) && !isPanelPressed)
         VerletResetRate();
+
     int wheel = GetMouseWheelMove();
     if (wheel != 0)
         VerletChangeScale(wheel, GetMouseX() * 2, GetMouseY() * 2);
+
+    if (IsMouseButtonDown(0) && isPanelPressed)
+        PanelMouseMove(GetMouseX() * 2, GetMouseY() * 2);
     VerletMouseMove(GetMouseX() * 2, GetMouseY() * 2);
-    if (IsMouseButtonReleased(0))
-        VerletMouseRelease();
+
+    if (IsMouseButtonReleased(0)) {
+        if (isPanelPressed) PanelMouseRelease();
+        else VerletMouseRelease();
+    }
 
     VerletTick();
     VerletDraw();
+    PanelDraw();
 }
 
 void DrawIcon(Vector2 offset, float scale, float t)
@@ -191,6 +210,8 @@ int main(int argc, char *argv[])
     PalmTreeSetup();
     InitGraph(SCR_W * 0.35, SCR_H * 0.5, SCR_W * 0.35, SCR_H * 0.5);
     VerletResetRate();
+
+    PanelSetDimensions(SCR_W * 0.7, 0, SCR_W * 0.3, SCR_H);
 
     while (!WindowShouldClose()) {
         BeginDrawing();
