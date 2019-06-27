@@ -34,9 +34,17 @@ void GenerateAnchoredBezier(
     Vector2 offset, Vector2 anchor,
     float scaleX, float scaleY, float rotation);
 
-void DrawPolyFilledConvex(const Vector2 *points, int numPoints, Color color);
+void DrawPolyFilledConcave(const Vector2 *points, int numPoints, Color color);
 
 void DrawCircleFilledOutline(Vector2 c, float r, Color fill, Color outline);
+
+void DrawLineStripWithChromaBegin();
+void DrawLineStripWithChromaAdd(Vector2 p, Vector2 q, float d, float s, Color c);
+void DrawLineStripWithChromaEnd();
+
+void DrawCirclesBegin(float r, int segs);
+void DrawCirclesAdd(Vector2 p, Color c);
+void DrawCirclesEnd();
 
 #include "easings.h"
 
