@@ -13,6 +13,15 @@ extern "C" {
 #include <cstring>
 #include <algorithm>
 #include <utility>
+#include <vector>
+
+std::vector<double> Graph::sssp(unsigned source)
+{
+    std::vector<double> ret;
+    for (size_t i = 0; i < edge.size(); i++)
+        ret.push_back((double)std::abs((int)i - (int)source) / edge.size());
+    return ret;
+}
 
 static int n, m;
 static Graph g;
@@ -206,6 +215,13 @@ static Vector2 lastHoverSize;
 static const double HOVER_FADE_IN_T = 0.2;
 static const double HOVER_FADE_OUT_T = 0.4;
 
+static int selVert = -1, px0, py0;
+static double selTime = 0;
+static double releaseTime = -INFINITY;
+static std::vector<double> selSSSP;
+static const double SEL_FADE_IN_T = 0.15;
+static const double SEL_FADE_OUT_T = 0.3;
+
 #if !defined(BARNES_HUT_TEST) && !defined(SIM_TEST)
 
 void VerletDraw()
@@ -235,6 +251,7 @@ void VerletDraw()
     }
     DrawLineStripWithChromaEnd();
 
+    double t = GetTime();
     float radius = 5 * Lerp(scale, 1, 0.875);
     DrawCirclesBegin(radius, 6);
     for (int i = 0; i < n; i++) {
@@ -245,14 +262,25 @@ void VerletDraw()
         if (p.x > x - hw - radius && p.x < x + hw + radius &&
             p.y > y - hh - radius && p.y < x + hh + radius)
         {
-            DrawCirclesAdd(p, LIME_8);
+            Color c = LIME_8;
+            if (selVert != -1 || t < releaseTime + SEL_FADE_OUT_T) {
+                Color c1 = ORANGE_6;
+                double lerp = (t < selTime + SEL_FADE_IN_T) ?
+                    (t - selTime) / SEL_FADE_IN_T :
+                    (t > releaseTime) ?
+                    1 - (t - releaseTime) / SEL_FADE_OUT_T : 1;
+                lerp *= selSSSP[i];
+                c.r = Lerp(c.r, c1.r, lerp);
+                c.g = Lerp(c.g, c1.g, lerp);
+                c.b = Lerp(c.b, c1.b, lerp);
+            }
+            DrawCirclesAdd(p, c);
         }
     }
     DrawCirclesEnd();
 
     // Tooltip
     rlglDraw();
-    double t = GetTime();
     if (hoverID != -1 && t < unhoverTime + HOVER_FADE_OUT_T) {
         float alpha = (t < hoverTime + HOVER_FADE_IN_T) ?
             Lerp(lastHoverAlpha, 1, (t - hoverTime) / HOVER_FADE_IN_T) :
@@ -277,8 +305,6 @@ void VerletDraw()
 
 #endif
 
-static int selVert = -1, px0, py0;
-
 static inline void FindNearest(int px, int py, int &id, float &dsq)
 {
     id = -1;
@@ -302,6 +328,9 @@ void VerletMousePress(int px, int py)
     FindNearest(px, py, id, nearest);
     if (nearest <= 10 * 10) {
         selVert = id;
+        selSSSP = g.sssp(id);
+        selTime = GetTime();
+        releaseTime = INFINITY;
         px0 = vert[id].x - px;
         py0 = vert[id].y - py;
     }
@@ -340,8 +369,11 @@ void VerletMouseMove(int px, int py)
 
 void VerletMouseRelease()
 {
-    if (selVert != -1) VerletCancelFix(selVert);
-    selVert = -1;
+    if (selVert != -1) {
+        VerletCancelFix(selVert);
+        selVert = -1;
+        releaseTime = std::max(selTime + SEL_FADE_IN_T, GetTime());
+    }
 }
 
 void VerletChangeScale(int wheel, int px, int py)
