@@ -232,12 +232,18 @@ void VerletDraw()
     }
     DrawLineStripWithChromaEnd();
 
-    DrawCirclesBegin(5, 6);
+    float radius = 5;
+    DrawCirclesBegin(radius, 6);
     for (int i = 0; i < n; i++) {
-        DrawCirclesAdd((Vector2){
+        Vector2 p = (Vector2){
             (float)(x + vert[i].x),
             (float)(y + vert[i].y)
-        }, LIME_8);
+        };
+        if (p.x > x - hw - radius && p.x < x + hw + radius &&
+            p.y > y - hh - radius && p.y < x + hh + radius)
+        {
+            DrawCirclesAdd(p, LIME_8);
+        }
     }
     DrawCirclesEnd();
 
