@@ -308,7 +308,7 @@ void VerletMouseMove(int px, int py)
     if (nearest <= 10 * 10) {
         if (hoverID != id || !isinf(unhoverTime)) {
             lastHoverAlpha = Clamp(1 - (t - unhoverTime) / HOVER_FADE_OUT_T, 0, 1);
-            if (lastHoverAlpha > 1e-6) {
+            if (hoverID >= 0 && lastHoverAlpha > 1e-6) {
                 lastHoverX = ::x + vert[hoverID].x;
                 lastHoverY = ::y + vert[hoverID].y;
                 lastHoverSize = MeasureTextEx(font, vert[hoverID].title, 32, 0);
