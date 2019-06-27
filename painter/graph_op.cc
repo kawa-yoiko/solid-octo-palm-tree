@@ -197,7 +197,10 @@ void VerletTick()
 
 static int hoverID = -1;
 static double hoverTime = 0;
-static double unhoverTime = 0;
+static double unhoverTime = -INFINITY;
+static double lastHoverAlpha = 0;
+static float lastHoverX = NAN, lastHoverY = NAN;
+static Vector2 lastHoverSize;
 static const double HOVER_FADE_IN_T = 0.2;
 static const double HOVER_FADE_OUT_T = 0.4;
 
@@ -243,14 +246,20 @@ void VerletDraw()
     double t = GetTime();
     if (hoverID != -1 && t < unhoverTime + HOVER_FADE_OUT_T) {
         float alpha = (t < hoverTime + HOVER_FADE_IN_T) ?
-            (t - hoverTime) / HOVER_FADE_IN_T :
+            Lerp(lastHoverAlpha, 1, (t - hoverTime) / HOVER_FADE_IN_T) :
             (t > unhoverTime) ? (1 - (t - unhoverTime) / HOVER_FADE_OUT_T) : 1;
         Vector2 size = MeasureTextEx(font, vert[hoverID].title, 32, 0);
-        DrawRectangle(x + vert[hoverID].x, y + vert[hoverID].y,
-            size.x, size.y, Fade(GRAY_4, alpha));
-        DrawTextEx(font, vert[hoverID].title,
-            (Vector2){x + vert[hoverID].x, y + vert[hoverID].y},
-            32, 0, Fade(GRAY_8, alpha));
+        Vector2 pos = (Vector2){x + vert[hoverID].x, y + vert[hoverID].y};
+        if (t < hoverTime + HOVER_FADE_IN_T && !isnan(lastHoverX)) {
+            size = Vector2Lerp(
+                lastHoverSize,
+                size, EaseExpOut((t - hoverTime) / HOVER_FADE_IN_T));
+            pos = Vector2Lerp(
+                (Vector2){lastHoverX, lastHoverY},
+                pos, EaseExpOut((t - hoverTime) / HOVER_FADE_IN_T));
+        }
+        DrawRectangleV(pos, size, Fade(GRAY_4, alpha));
+        DrawTextEx(font, vert[hoverID].title, pos, 32, 0, Fade(GRAY_8, alpha));
     }
 }
 
@@ -295,14 +304,24 @@ void VerletMouseMove(int px, int py)
     int id;
     float nearest;
     FindNearest(px, py, id, nearest);
+    double t = GetTime();
     if (nearest <= 10 * 10) {
-        if (hoverID != id) {
+        if (hoverID != id || !isinf(unhoverTime)) {
+            lastHoverAlpha = Clamp(1 - (t - unhoverTime) / HOVER_FADE_OUT_T, 0, 1);
+            if (lastHoverAlpha > 1e-6) {
+                lastHoverX = ::x + vert[hoverID].x;
+                lastHoverY = ::y + vert[hoverID].y;
+                lastHoverSize = MeasureTextEx(font, vert[hoverID].title, 32, 0);
+            } else {
+                lastHoverX = NAN;
+                lastHoverY = NAN;
+            }
             hoverID = id;
             hoverTime = GetTime();
         }
         unhoverTime = INFINITY;
     } else if (isinf(unhoverTime)) {
-        unhoverTime = std::max(hoverTime + HOVER_FADE_IN_T, GetTime());
+        unhoverTime = std::max(hoverTime + HOVER_FADE_IN_T, t);
     }
 }
 
