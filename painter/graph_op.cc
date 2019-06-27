@@ -5,6 +5,8 @@ extern "C" {
 #include "global.h"
 }
 
+#include "rlgl.h"
+
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
@@ -193,6 +195,12 @@ void VerletTick()
     }
 }
 
+static int hoverID = -1;
+static double hoverTime = 0;
+static double unhoverTime = 0;
+static const double HOVER_FADE_IN_T = 0.2;
+static const double HOVER_FADE_OUT_T = 0.4;
+
 #if !defined(BARNES_HUT_TEST) && !defined(SIM_TEST)
 
 void VerletDraw()
@@ -229,26 +237,48 @@ void VerletDraw()
         }, LIME_8);
     }
     DrawCirclesEnd();
+
+    // Tooltip
+    rlglDraw();
+    double t = GetTime();
+    if (hoverID != -1 && t < unhoverTime + HOVER_FADE_OUT_T) {
+        float alpha = (t < hoverTime + HOVER_FADE_IN_T) ?
+            (t - hoverTime) / HOVER_FADE_IN_T :
+            (t > unhoverTime) ? (1 - (t - unhoverTime) / HOVER_FADE_OUT_T) : 1;
+        Vector2 size = MeasureTextEx(font, vert[hoverID].title, 32, 0);
+        DrawRectangle(x + vert[hoverID].x, y + vert[hoverID].y,
+            size.x, size.y, Fade(GRAY_4, alpha));
+        DrawTextEx(font, vert[hoverID].title,
+            (Vector2){x + vert[hoverID].x, y + vert[hoverID].y},
+            32, 0, Fade(GRAY_8, alpha));
+    }
 }
 
 #endif
 
 static int selVert = -1, px0, py0;
 
+static inline void FindNearest(int px, int py, int &id, float &dsq)
+{
+    id = -1;
+    dsq = INFINITY;
+    for (int u = 0; u < n; u++) {
+        float cur = (px - vert[u].x) * (px - vert[u].x)
+            + (py - vert[u].y) * (py - vert[u].y);
+        if (dsq > cur) {
+            dsq = cur;
+            id = u;
+        }
+    }
+}
+
 void VerletMousePress(int px, int py)
 {
     px -= ::x;
     py -= ::y;
-    int id = -1;
-    float nearest = INFINITY;
-    for (int u = 0; u < n; u++) {
-        float cur = (px - vert[u].x) * (px - vert[u].x)
-            + (py - vert[u].y) * (py - vert[u].y);
-        if (nearest > cur) {
-            nearest = cur;
-            id = u;
-        }
-    }
+    int id;
+    float nearest;
+    FindNearest(px, py, id, nearest);
     if (nearest <= 10 * 10) {
         selVert = id;
         px0 = vert[id].x - (px + ::x);
@@ -259,6 +289,21 @@ void VerletMousePress(int px, int py)
 void VerletMouseMove(int px, int py)
 {
     if (selVert != -1) VerletSetFix(selVert, px + px0, py + py0);
+
+    px -= ::x;
+    py -= ::y;
+    int id;
+    float nearest;
+    FindNearest(px, py, id, nearest);
+    if (nearest <= 10 * 10) {
+        if (hoverID != id) {
+            hoverID = id;
+            hoverTime = GetTime();
+        }
+        unhoverTime = INFINITY;
+    } else if (isinf(unhoverTime)) {
+        unhoverTime = std::max(hoverTime + HOVER_FADE_IN_T, GetTime());
+    }
 }
 
 void VerletMouseRelease()

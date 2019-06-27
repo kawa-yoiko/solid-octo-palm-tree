@@ -60,10 +60,9 @@ void DrawMainScreen()
 
     if (IsMouseButtonPressed(0))
         VerletMousePress(GetMouseX() * 2, GetMouseY() * 2);
-    if (IsMouseButtonDown(0)) {
-        VerletMouseMove(GetMouseX() * 2, GetMouseY() * 2);
+    if (IsMouseButtonDown(0))
         VerletResetRate();
-    }
+    VerletMouseMove(GetMouseX() * 2, GetMouseY() * 2);
     if (IsMouseButtonReleased(0))
         VerletMouseRelease();
 
