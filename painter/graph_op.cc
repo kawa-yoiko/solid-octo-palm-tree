@@ -263,7 +263,7 @@ void VerletDraw()
             p.y > -radius && p.y < SCR_H + radius)
         {
             Color c = LIME_8;
-            if (selVert != -1 || t < releaseTime + SEL_FADE_OUT_T) {
+            if (selVert >= 0 || t < releaseTime + SEL_FADE_OUT_T) {
                 Color c1 = ORANGE_6;
                 double lerp = (t < selTime + SEL_FADE_IN_T) ?
                     (t - selTime) / SEL_FADE_IN_T :
@@ -333,15 +333,31 @@ void VerletMousePress(int px, int py)
         releaseTime = INFINITY;
         px0 = vert[id].x - px;
         py0 = vert[id].y - py;
+    } else {
+        selVert = -2;
+        px0 = px;
+        py0 = py;
     }
 }
 
 void VerletMouseMove(int px, int py)
 {
+    int px1 = px, py1 = py;
     px = (px - ::x - sx) / scale;
     py = (py - ::y - sy) / scale;
 
-    if (selVert != -1) VerletSetFix(selVert, px + px0, py + py0);
+    if (selVert >= 0) {
+        VerletSetFix(selVert, px + px0, py + py0);
+    } else if (selVert == -2) {
+        float dx = (px - px0) * scale;
+        float dy = (py - py0) * scale;
+        sx += dx;
+        sy += dy;
+        px = (px1 - ::x - sx) / scale;
+        py = (py1 - ::y - sy) / scale;
+        px0 = px;
+        py0 = py;
+    }
 
     int id;
     float nearest;
@@ -369,11 +385,11 @@ void VerletMouseMove(int px, int py)
 
 void VerletMouseRelease()
 {
-    if (selVert != -1) {
+    if (selVert >= 0) {
         VerletCancelFix(selVert);
-        selVert = -1;
         releaseTime = std::max(selTime + SEL_FADE_IN_T, GetTime());
     }
+    selVert = -1;
 }
 
 void VerletChangeScale(int wheel, int px, int py)
