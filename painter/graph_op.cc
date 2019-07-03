@@ -5,26 +5,40 @@ extern "C" {
 #include "global.h"
 }
 
+#include "rlgl.h"
+
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
 #include <utility>
+#include <vector>
+
+std::vector<double> Graph::sssp(unsigned source)
+{
+    std::vector<double> ret;
+    for (size_t i = 0; i < edge.size(); i++)
+        ret.push_back((double)std::abs((int)i - (int)source) / edge.size());
+    return ret;
+}
 
 static int n, m;
 static Graph g;
 
 static int x, y, hw, hh;
+static float scale = 1;
+static float sx = 0, sy = 0;
 
 struct GraphVertex {
     char *title;
-    float x, y, vx, vy, ax, ay, ax0, ay0, fx, fy;
+    int deg;
+    float x, y, vx, vy, fx, fy;
     Color c;
     GraphVertex()
       : title(nullptr),
-        x(0), y(0), vx(0), vy(0), ax(0), ay(0), ax0(0), ay0(0),
-        fx(NAN), fy(NAN),
+        deg(0),
+        x(0), y(0), vx(0), vy(0), fx(NAN), fy(NAN),
         c({0, 0, 0, 0}) { }
     ~GraphVertex() { if (title) free(title); }
 };
@@ -32,8 +46,6 @@ struct GraphVertex {
 static std::vector<GraphVertex> vert;
 
 #include "barnes_hut.hh"
-
-#ifndef BARNES_HUT_TEST
 
 void InitGraph(int x, int y, int hw, int hh)
 {
@@ -55,14 +67,8 @@ void InitGraph(int x, int y, int hw, int hh)
     char s[1024];
     fgets(s, sizeof s, f);  // Ignore a newline
 
-    int perm[n];
-    for (int i = 0; i < n; i++) perm[i] = i;
-    for (int i = 1; i < n; i++)
-        for (int j = 101; j <= 130; j++) {
-            int r = j * (j + 3) + 100000 / j + 1928374655 % (j * j * (j + 24) + 9997);
-            std::swap(perm[i], perm[r % (i + 1)]);
-        }
-    for (int i = 0; i < n; i++) printf("%d%c", perm[i], i == n - 1 ? '\n' : ' ');
+    const float radius = 10;
+    const float angle = M_PI * (3 - sqrtf(5));
 
     for (int i = 0; i < n; i++) {
         fgets(s, sizeof s, f);
@@ -70,8 +76,8 @@ void InitGraph(int x, int y, int hw, int hh)
         while (len > 0 && isspace(s[len - 1])) len--;
         s[len] = '\0';
         vert[i].title = strdup(s);
-        vert[i].x = sin(M_PI * 2 * perm[i] / n) * 400;
-        vert[i].y = cos(M_PI * 2 * perm[i] / n) * 400;
+        vert[i].x = cos(angle * i) * radius * sqrtf(i);
+        vert[i].y = sin(angle * i) * radius * sqrtf(i);
         vert[i].c = LIME_3;
     }
 
@@ -79,18 +85,23 @@ void InitGraph(int x, int y, int hw, int hh)
         //fscanf(f, "%d%d%d", &u, &v, &w);
         fscanf(f, "%d%d", &u, &v);
         g.edge[u].push_back(Graph::Edge(v, w));
+        vert[u].deg++;
+        vert[v].deg++;
     }
 
     fclose(f);
 }
 
-static float _rate = 1.0;
-static int _tick = 120;
+static float alpha, alphaMin, alphaDecay, alphaTarget;
+static float velocityDecay;
 
 void VerletResetRate()
 {
-    _rate = 1.0;
-    _tick = 120;
+    alpha = 1.0;
+    alphaMin = 0.001;
+    alphaDecay = 1 - powf(alphaMin, 1.0 / 300);
+    alphaTarget = 0;
+    velocityDecay = 0.6;
 }
 
 void VerletSetFix(int id, float x, float y)
@@ -104,88 +115,114 @@ void VerletCancelFix(int id)
     VerletSetFix(id, NAN, NAN);
 }
 
+static inline float jiggle()
+{
+    return (float)rand() / RAND_MAX * 2e-6 - 1e-6;
+}
+
+static inline float linkStrength(int u, int v)
+{
+    return 1.f / std::min(vert[u].deg, vert[v].deg);
+}
+
+static inline float linkBias(int u, int v)
+{
+    return (float)vert[u].deg / (vert[u].deg + vert[v].deg);
+}
+
 void VerletTick()
 {
-    if (_rate <= 0.05) return;
-
-    const float dt = 1.f / 60;
-    const float ALPHA = 0.5f;
-    const float BETA = 300.f;
-    const float GAMMA = 0.06f;
-
-    // Integration (1)
-    for (int u = 0; u < n; u++) {
-        if (isnan(vert[u].fx)) {
-            vert[u].x += (vert[u].vx + vert[u].ax / 2 * dt) * dt;
-            vert[u].y += (vert[u].vy + vert[u].ay / 2 * dt) * dt;
-            vert[u].ax0 = vert[u].ax;
-            vert[u].ay0 = vert[u].ay;
-            vert[u].ax = vert[u].ay = 0;
-        } else {
-            vert[u].x = vert[u].fx;
-            vert[u].y = vert[u].fy;
-            vert[u].ax0 = vert[u].ax = vert[u].vx =
-            vert[u].ay0 = vert[u].ay = vert[u].vy = 0;
-        }
-    }
+    if (alpha < 1e-2) return;
+    alpha += (alphaTarget - alpha) * alphaDecay;
 
     // Link force
     for (int u = 0; u < n; u++)
         for (const auto &e : g.edge[u]) {
             int v = e.v;
-            float dx = vert[v].x - vert[u].x;
-            float dy = vert[v].y - vert[u].y;
+            float dx = (vert[v].x + vert[v].vx) - (vert[u].x + vert[u].vx);
+            float dy = (vert[v].y + vert[v].vy) - (vert[u].y + vert[u].vy);
+            if (fabsf(dx) <= 1e-6) dx = jiggle();
+            if (fabsf(dy) <= 1e-6) dy = jiggle();
             float l = sqrtf(dx * dx + dy * dy);
-            if (fabsf(l) <= 1e-6) l = 1e-6;
-            float rate = (l - 90) / l;
-            dx *= rate * ALPHA;
-            dy *= rate * ALPHA;
-            float b = 0.5;
-            vert[v].ax -= dx * b;
-            vert[v].ay -= dy * b;
-            vert[u].ax += dx * (1 - b);
-            vert[u].ay += dy * (1 - b);
+            l = (l - 30) / l * alpha * linkStrength(u, v);
+            dx *= l;
+            dy *= l;
+            float b = linkBias(u, v);
+            vert[v].vx -= dx * b;
+            vert[v].vy -= dy * b;
+            vert[u].vx += dx * (1 - b);
+            vert[u].vy += dy * (1 - b);
         }
 
     // Repulsive force
+    /*for (int u = 0; u < n; u++)
+        for (int v = u + 1; v < n; v++) {
+            float dx = vert[v].x - vert[u].x;
+            float dy = vert[v].y - vert[u].y;
+            if (fabsf(dx) <= 1e-6) dx = jiggle();
+            if (fabsf(dy) <= 1e-6) dy = jiggle();
+            float l = sqrtf(dx * dx + dy * dy);
+            dx /= l;
+            dy /= l;
+            if (l <= 5) l = 5;
+            vert[u].vx -= dx / (l * l) * alpha * 30;
+            vert[u].vy -= dy / (l * l) * alpha * 30;
+            vert[v].vx += dx / (l * l) * alpha * 30;
+            vert[v].vy += dy / (l * l) * alpha * 30;
+        }*/
+    float theta = 0.7 + (1 - alpha) * 0.5;
     BarnesHut::Rebuild(n);
     for (int u = 0; u < n; u++) {
-        auto f = BarnesHut::Get(vert[u].x, vert[u].y, _rate >= 0.5 ? 0.9 : 2);
-        vert[u].ax += f.first * BETA;
-        vert[u].ay += f.second * BETA;
+        auto f = BarnesHut::Get(vert[u].x, vert[u].y, theta);
+        vert[u].vx += f.first * alpha * 30;
+        vert[u].vy += f.second * alpha * 30;
     }
 
-    // Radial force
-    for (int u = 0; u < n; u++) {
-        float l = sqrtf(vert[u].x * vert[u].x + vert[u].y * vert[u].y);
-        if (fabsf(l) <= 1e-6) l = 1e-6;
-        float ux = vert[u].x / l;
-        float uy = vert[u].y / l;
-        float diff = (360 - l);
-        vert[u].ax += diff * ux * GAMMA;
-        vert[u].ay += diff * uy * GAMMA;
-    }
-
-    // Integration (2)
+    // Integration
     for (int u = 0; u < n; u++) {
         if (isnan(vert[u].fx)) {
-            vert[u].vx += (vert[u].ax + vert[u].ax0) / 2 * dt;
-            vert[u].vy += (vert[u].ay + vert[u].ay0) / 2 * dt;
-            vert[u].vx *= _rate;
-            vert[u].vy *= _rate;
-            vert[u].ax *= _rate;
-            vert[u].ay *= _rate;
+            vert[u].vx *= velocityDecay;
+            vert[u].vy *= velocityDecay;
+            vert[u].x += vert[u].vx;
+            vert[u].y += vert[u].vy;
         } else {
-            vert[u].ax = vert[u].ay = 0;
+            vert[u].x = vert[u].fx;
+            vert[u].y = vert[u].fy;
+            vert[u].vx = vert[u].vy = 0;
         }
     }
 
-    if (_tick > 0) _tick--; else _rate *= 0.99;
-
-    // Centre "force"
+    // Keep CM at the centre
+    float sx = 0, sy = 0;
     for (int u = 0; u < n; u++) {
+        sx += vert[u].x;
+        sy += vert[u].y;
+    }
+    sx /= n;
+    sy /= n;
+    for (int u = 0; u < n; u++) {
+        vert[u].x -= sx;
+        vert[u].y -= sy;
     }
 }
+
+static int hoverID = -1;
+static double hoverTime = 0;
+static double unhoverTime = -INFINITY;
+static double lastHoverAlpha = 0;
+static float lastHoverX = NAN, lastHoverY = NAN;
+static Vector2 lastHoverSize;
+static const double HOVER_FADE_IN_T = 0.2;
+static const double HOVER_FADE_OUT_T = 0.4;
+
+static int selVert = -1, px0, py0;
+static double selTime = 0;
+static double releaseTime = -INFINITY;
+static std::vector<double> selSSSP;
+static const double SEL_FADE_IN_T = 0.15;
+static const double SEL_FADE_OUT_T = 0.3;
+
+#if !defined(BARNES_HUT_TEST) && !defined(SIM_TEST)
 
 void VerletDraw()
 {
@@ -194,33 +231,190 @@ void VerletDraw()
     DrawLineStripWithChromaBegin();
     for (int i = 0; i < n; i++) {
         Vector2 p = (Vector2){
-            (float)(x + vert[i].x),
-            (float)(y + vert[i].y)
+            (float)(x + sx + vert[i].x * scale),
+            (float)(y + sy + vert[i].y * scale)
         };
         for (const auto &e : g.edge[i]) {
             Vector2 q = (Vector2){
-                (float)(x + vert[e.v].x),
-                (float)(y + vert[e.v].y)
+                (float)(x + sx + vert[e.v].x * scale),
+                (float)(y + sy + vert[e.v].y * scale)
             };
             int dsq = (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y);
-            if (dsq < hw * hw / 2) {
+            dsq *= scale;   // not scale * scale because we'd like to show more
+            if (dsq < hw * hw * 2) {
                 DrawLineStripWithChromaAdd(p, q,
                     sqrtf(dsq), 2.5,
-                    dsq < hw * hw / 4 ? GRAY_6 :
-                    Fade(GRAY_6, 2.0 - (float)dsq / (hw * hw / 4)));
+                    dsq < hw * hw ? GRAY_6 :
+                    Fade(GRAY_6, 2.0 - (float)dsq / (hw * hw)));
             }
         }
     }
     DrawLineStripWithChromaEnd();
 
-    DrawCirclesBegin(5, 6);
+    double t = GetTime();
+    float radius = 5 * Lerp(scale, 1, 0.875);
+    DrawCirclesBegin(radius, 6);
     for (int i = 0; i < n; i++) {
-        DrawCirclesAdd((Vector2){
-            (float)(x + vert[i].x),
-            (float)(y + vert[i].y)
-        }, LIME_8);
+        Vector2 p = (Vector2){
+            (float)(x + sx + vert[i].x * scale),
+            (float)(y + sy + vert[i].y * scale)
+        };
+        if (p.x > -radius && p.x < SCR_W + radius &&
+            p.y > -radius && p.y < SCR_H + radius)
+        {
+            Color c = LIME_8;
+            if (selVert >= 0 || t < releaseTime + SEL_FADE_OUT_T) {
+                Color c1 = ORANGE_6;
+                double lerp = (t < selTime + SEL_FADE_IN_T) ?
+                    (t - selTime) / SEL_FADE_IN_T :
+                    (t > releaseTime) ?
+                    1 - (t - releaseTime) / SEL_FADE_OUT_T : 1;
+                lerp *= selSSSP[i];
+                c.r = Lerp(c.r, c1.r, lerp);
+                c.g = Lerp(c.g, c1.g, lerp);
+                c.b = Lerp(c.b, c1.b, lerp);
+            }
+            DrawCirclesAdd(p, c);
+        }
     }
     DrawCirclesEnd();
+
+    // Tooltip
+    rlglDraw();
+    if (hoverID != -1 && t < unhoverTime + HOVER_FADE_OUT_T) {
+        float alpha = (t < hoverTime + HOVER_FADE_IN_T) ?
+            Lerp(lastHoverAlpha, 1, (t - hoverTime) / HOVER_FADE_IN_T) :
+            (t > unhoverTime) ? (1 - (t - unhoverTime) / HOVER_FADE_OUT_T) : 1;
+        Vector2 size = MeasureTextEx(font, vert[hoverID].title, 32, 0);
+        Vector2 pos = (Vector2){
+            x + sx + vert[hoverID].x * scale,
+            y + sy + vert[hoverID].y * scale
+        };
+        if (t < hoverTime + HOVER_FADE_IN_T && !isnan(lastHoverX)) {
+            size = Vector2Lerp(
+                lastHoverSize,
+                size, EaseExpOut((t - hoverTime) / HOVER_FADE_IN_T));
+            pos = Vector2Lerp(
+                (Vector2){lastHoverX, lastHoverY},
+                pos, EaseExpOut((t - hoverTime) / HOVER_FADE_IN_T));
+        }
+        DrawRectangleV(pos, size, Fade(GRAY_4, alpha));
+        DrawTextEx(font, vert[hoverID].title, pos, 32, 0, Fade(GRAY_8, alpha));
+    }
 }
 
+#endif
+
+static inline void FindNearest(int px, int py, int &id, float &dsq)
+{
+    id = -1;
+    dsq = INFINITY;
+    for (int u = 0; u < n; u++) {
+        float cur = (px - vert[u].x) * (px - vert[u].x)
+            + (py - vert[u].y) * (py - vert[u].y);
+        if (dsq > cur) {
+            dsq = cur;
+            id = u;
+        }
+    }
+}
+
+void VerletMousePress(int px, int py)
+{
+    px = (px - ::x - sx) / scale;
+    py = (py - ::y - sy) / scale;
+    int id;
+    float nearest;
+    FindNearest(px, py, id, nearest);
+    if (nearest <= 10 * 10) {
+        selVert = id;
+        selSSSP = g.sssp(id);
+        selTime = GetTime();
+        releaseTime = INFINITY;
+        px0 = vert[id].x - px;
+        py0 = vert[id].y - py;
+    } else {
+        selVert = -2;
+        px0 = px;
+        py0 = py;
+    }
+}
+
+void VerletMouseMove(int px, int py)
+{
+    int px1 = px, py1 = py;
+    px = (px - ::x - sx) / scale;
+    py = (py - ::y - sy) / scale;
+
+    if (selVert >= 0) {
+        VerletSetFix(selVert, px + px0, py + py0);
+    } else if (selVert == -2) {
+        float dx = (px - px0) * scale;
+        float dy = (py - py0) * scale;
+        sx += dx;
+        sy += dy;
+        px = (px1 - ::x - sx) / scale;
+        py = (py1 - ::y - sy) / scale;
+        px0 = px;
+        py0 = py;
+    }
+
+    int id;
+    float nearest;
+    FindNearest(px, py, id, nearest);
+    double t = GetTime();
+    if (nearest <= 10 * 10) {
+        if (hoverID != id || !isinf(unhoverTime)) {
+            lastHoverAlpha = Clamp(1 - (t - unhoverTime) / HOVER_FADE_OUT_T, 0, 1);
+            if (hoverID >= 0 && lastHoverAlpha > 1e-6) {
+                lastHoverX = ::x + sx + vert[hoverID].x * scale;
+                lastHoverY = ::y + sy + vert[hoverID].y * scale;
+                lastHoverSize = MeasureTextEx(font, vert[hoverID].title, 32, 0);
+            } else {
+                lastHoverX = NAN;
+                lastHoverY = NAN;
+            }
+            hoverID = id;
+            hoverTime = GetTime();
+        }
+        unhoverTime = INFINITY;
+    } else if (isinf(unhoverTime)) {
+        unhoverTime = std::max(hoverTime + HOVER_FADE_IN_T, t);
+    }
+}
+
+void VerletMouseRelease()
+{
+    if (selVert >= 0) {
+        VerletCancelFix(selVert);
+        releaseTime = std::max(selTime + SEL_FADE_IN_T, GetTime());
+    }
+    selVert = -1;
+}
+
+void VerletChangeScale(int wheel, int px, int py)
+{
+    px = (px - ::x - sx) / scale;
+    py = (py - ::y - sy) / scale;
+    float newScale = Clamp(scale + (float)wheel / 16, 1, 8);
+    // ::x + sx + px * scale == ::x + sx' + px * scale'
+    sx = sx + px * (scale - newScale);
+    sy = sy + py * (scale - newScale);
+    scale = newScale;
+}
+
+// g++ graph_op.cc -Og -g -std=c++11 -DSIM_TEST
+#ifdef SIM_TEST
+int main()
+{
+    InitGraph(100, 100, 100, 100);
+    VerletResetRate();
+    for (int i = 0; i < 10; i++) {
+        VerletTick();
+        printf("\n== %d ==\n", i);
+        for (int j = 0; j < n; j++)
+            printf("%.4f %.4f %.4f %.4f\n",
+                vert[j].x, vert[j].y, vert[j].vx, vert[j].vy);
+    }
+}
 #endif

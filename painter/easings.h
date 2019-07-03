@@ -12,6 +12,9 @@ static inline float EaseQuadOut(float x) { return 1 - EaseQuadIn(1 - x); }
 static inline float EaseCubicIn(float x) { return x * x * x; }
 static inline float EaseCubicOut(float x) { return 1 - EaseCubicIn(1 - x); }
 
+static inline float EaseExpIn(float x) { return exp(7 * x) / exp(7); }
+static inline float EaseExpOut(float x) { return 1 - EaseExpIn(1 - x); }
+
 static inline float EaseElasticOut(float x, float p)
 {
     return exp(-10 * x) * sin((x * 2 - p / 2) * M_PI / p) + 1;
