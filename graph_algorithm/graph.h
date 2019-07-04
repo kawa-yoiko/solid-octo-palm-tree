@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <stack>
 
 
 class Graph
@@ -12,14 +13,13 @@ public:
 		double w;
 		Edge(unsigned _v, double _w) : v(_v), w(_w) { }
 	};
-	using std::vector;
-	vector<vector<Edge>> edge;
+	std::vector<std::vector<Edge>> edge;
 
-	vector<vector<std::pair<double, int>>> d; // d[u][v] = {dist, num_shortest_path}
-	vector<unsigned> color;
-	vector<double> pagerank;
-	vector<double> closeness;
-	vector<double> betweenness;
+	std::vector<std::vector<double>> d; // d[u][v] = dist
+	std::vector<unsigned> color;
+	std::vector<double> pagerank;
+	std::vector<double> closeness;
+	std::vector<double> betweenness;
 
 	void compute();
 
