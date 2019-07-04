@@ -12,18 +12,17 @@ public:
 		double w;
 		Edge(unsigned _v, double _w) : v(_v), w(_w) { }
 	};
-	using std::vector;
-	vector<vector<Edge>> edge;
+	std::vector<std::vector<Edge>> edge;
 
-	vector<vector<std::pair<double, int>>> d; // d[u][v] = {dist, num_shortest_path}
-	vector<unsigned> color;
-	vector<double> pagerank;
-	vector<double> closeness;
-	vector<double> betweenness;
+	std::vector<std::vector<std::pair<double, int>>> d; // d[u][v] = {dist, num_shortest_path}
+	std::vector<unsigned> _color;
+	std::vector<double> _pagerank;
+	std::vector<double> _closeness;
+	std::vector<double> _betweenness;
 
 	void compute();
 
-private:
+//private:
 	std::vector<double> pagerank(unsigned nIter, bool normalize = false) const;
 	std::vector<double> betweenness() const;
 	std::vector<double> closeness() const;

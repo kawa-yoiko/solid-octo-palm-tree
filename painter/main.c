@@ -78,8 +78,7 @@ void DrawMainScreen()
     if (wheel != 0)
         VerletChangeScale(wheel, GetMouseX() * 2, GetMouseY() * 2);
 
-    if (IsMouseButtonDown(0) && isPanelPressed)
-        PanelMouseMove(GetMouseX() * 2, GetMouseY() * 2);
+    PanelMouseMove(GetMouseX() * 2, GetMouseY() * 2);
     VerletMouseMove(GetMouseX() * 2, GetMouseY() * 2);
 
     if (IsMouseButtonReleased(0)) {

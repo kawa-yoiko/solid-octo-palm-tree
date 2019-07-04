@@ -15,7 +15,7 @@ extern "C" {
 #include <utility>
 #include <vector>
 
-std::vector<double> Graph::sssp(unsigned source)
+std::vector<double> Graph::sssp(unsigned source) const
 {
     std::vector<double> ret;
     for (size_t i = 0; i < edge.size(); i++)
