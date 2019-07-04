@@ -188,7 +188,7 @@ static inline void DrawStartupScreen()
 {
     ClearBackground(LIME_1);
 
-    float t = GetTime() + 5.5;
+    float t = GetTime();
     if (t < 0.3) return;
     t -= 0.3;
 
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 
     while (!WindowShouldClose()) {
         BeginDrawing();
-            if (GetTime() + 5.5 <= 6)
+            if (GetTime() <= 6)
                 DrawStartupScreen();
             else
                 DrawMainScreen();
