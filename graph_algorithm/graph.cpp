@@ -30,7 +30,8 @@ void Graph::floyd()
 }
 
 
-// single source shortest path (with path counting)
+
+// single source shortest path (without path counting)
 // using Dijkstra algorithm
 std::vector<double> Graph::sssp(unsigned source) const
 {
@@ -61,6 +62,42 @@ std::vector<double> Graph::sssp(unsigned source) const
 	}
 	return dist;
 }
+
+
+
+
+// single source shortest path (with path counting)
+// using Dijkstra algorithm
+std::vector<std::pair<double, unsigned>> Graph::sssp(unsigned source) const
+{
+	unsigned N = edge.size();
+	std::vector<std::pair<double, unsigned>> dist(N, {INFINITY, 0});
+	std::vector<bool> used(N, false);
+	typedef std::pair<double, std::pair<unsigned, unsigned>> pq_t;
+	priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
+	dist[source] = {0,1};
+	q.push({0, source});
+	for (unsigned i=0; i<N && !q.empty(); ++i)
+	{
+		unsigned u = q.top().second;
+		q.pop();
+		while (used[u])
+		{
+			if (q.empty()) return dist;
+			u = q.top().second;
+			q.pop();
+		}
+		used[u] = true;
+		for (auto const& t: edge[u])
+			if (dist[t.v] > dist[u] + t.w)
+			{
+				dist[t.v] = dist[u] + t.w;
+				q.push({dist[t.v], t.v});
+			}
+	}
+	return dist;
+}
+
 
 
 
@@ -134,3 +171,60 @@ std::vector<double> Graph::pagerank(unsigned nIter, bool normalize)
 	if (normalize) delete(&trans);
 	return curr;
 }
+
+
+
+namespace NSTarjanAlgorithm
+{
+	std::vector<int> low, dfn, color;
+	int dfsTime;
+	std::stack<int> S;
+
+	void dfs(int x)
+	{
+		low[x] = dfn[x] = ++dfsTime;
+		inStack = true;
+		S.push(x);
+		for (auto const& e: edge[x])
+		{
+			if (!dfn[e.v])
+			{
+				dfs(e.v);
+				low[x] = min(low[x], low[e.v]);
+			}
+			else if (inStack[e.v])
+				low[x] = min(low[x], dfn[e.v]);
+		}
+		if (dfn[x] == low[x])
+		{
+			inStack[x] = false;
+			component = {x};
+			color[x] = ++col_num;
+			while (S.top() != x)
+			{
+				component.push_back(S.top());
+				inStack[S.top()] = false;
+				S.pop();
+			}
+			S.pop();
+		}
+	}
+}
+
+
+void Graph::tarjan()
+{
+	using namespace NSTarjanAlgorithm;
+	dfsTime = 0;
+	const int n = edge.size();
+	low = dfn = color = vector<int>(n,0);
+	for (int i=0; i<n; ++i)
+	{
+		if (dfn[i] == 0)
+			tarjan(i);
+	}
+	this->color = color;
+}
+
+
+
