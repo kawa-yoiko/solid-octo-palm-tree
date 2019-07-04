@@ -9,54 +9,82 @@ using std::vector;
 
 // single source shortest path (without path counting)
 // using Dijkstra algorithm
-std::vector<double> Graph::sssp(unsigned source) const
+vector<std::pair<double, unsigned>> Graph::sssp(unsigned source) const
 {
 	unsigned N = edge.size();
-	std::vector<double> dist(N, INFINITY);
-	std::vector<bool> used(N, false);
-	typedef std::pair<double, unsigned> pq_t;
-	std::priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
+	vector<double> dist(N, INFINITY);
+	vector<unsigned> cnt(N, 0);
+	vector<bool> used(N, false);
+	struct pq_t
+	{
+		unsigned v, cnt;
+		double w;
+	};
+	struct pq_cmp
+	{
+		bool operator() (const pq_t& a, const pq_t& b)
+		{
+			return a.w > b.w || (a.w == b.w && a.cnt < b.cnt);
+		}
+	};
+	std::priority_queue<pq_t, std::vector<pq_t>, pq_cmp> q;
 	dist[source] = 0;
-	q.push({0, source});
+	cnt[source] = 1;
+	q.push({source, 1, 0});
 	for (unsigned i=0; i<N && !q.empty(); ++i)
 	{
-		unsigned u = q.top().second;
+		unsigned u = q.top().v;
 		q.pop();
 		while (used[u])
 		{
-			if (q.empty()) return dist;
-			u = q.top().second;
+			if (q.empty()) break;
+			u = q.top().v;
 			q.pop();
 		}
+		if (q.empty()) break;
 		used[u] = true;
 		for (auto const& t: edge[u])
+		{
 			if (dist[t.v] > dist[u] + t.w)
 			{
 				dist[t.v] = dist[u] + t.w;
-				q.push({dist[t.v], t.v});
+				cnt[t.v] = cnt[u];
+				q.push({t.v, cnt[t.v], dist[t.v]});
 			}
+			else if (dist[t.v] == dist[u] + t.w)
+			{
+				cnt[t.v] += cnt[u];
+				q.push({t.v, cnt[t.v], dist[t.v]});
+			}
+		}
 	}
-	return dist;
+	vector<std::pair<double, unsigned>> t;
+	for (int i=0; i<N; ++i)
+		t.push_back({dist[i], cnt[i]});
+	return t;
 }
 
 
 
 
-// compute betweenness using Brandes' algorithm
+// compute betweenness using Brandes algorithm
 void Graph::getBetweenness()
 {
 	int n = edge.size();
-	std::vector<int> P[n];
-	for (int u=0; u<n; ++u)
-		for (auto const& e: edge[u])
-			P[e.v].push_back(u);
+	vector<int> P[n];
 	betweenness = std::vector<double>(n,0);
 
 	for (int s=0; s<n; ++s)
 	{
-		std::vector<std::pair<double, unsigned>> S;
+		for (auto& p: P) p.clear();
+		for (int v=0; v<n; ++v)
+			for (auto const& e: edge[v])
+				if (d[s][e.v].first == d[s][v].first + e.w)
+					P[e.v].push_back(v);
+		vector<std::pair<double, unsigned>> S;
 		for (int i=0; i<n; ++i)
-			S.push_back({d[s][i],i});
+			if (!isinf(d[s][i].first))
+				S.push_back({d[s][i].first, i});
 		std::sort(S.begin(), S.end(), std::greater<std::pair<double, unsigned>>());
 		// S: non-increasing dist {dist, node}
 		double delta[n];
@@ -65,7 +93,7 @@ void Graph::getBetweenness()
 		{
 			int w = p.second;
 			for (int v: P[w])
-				delta[v] += 1 + delta[w];
+				delta[v] += d[s][v].second / d[s][w].second * (1 + delta[w]);
 			if (w != s)
 				betweenness[w] += delta[w];
 		}
@@ -84,7 +112,7 @@ void Graph::getCloseness()
 		double sum = 0;
 		for (int i=0; i<N; ++i)
 			if (i!=v)
-				sum += 1.0 / d[v][i];
+				sum += 1.0 / d[v][i].first;
 		closeness[v] = sum;
 	}
 }
