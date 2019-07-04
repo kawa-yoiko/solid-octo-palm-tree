@@ -105,7 +105,7 @@ static inline Graph BuildGraph()
 void InitGraph(const char *dataset, int x, int y, int hw, int hh)
 {
     char path[64];
-    snprintf(path, sizeof path, "../crawler/%s-processed.txt", dataset);
+    snprintf(path, sizeof path, "%s-processed.txt", dataset);
 
     FILE *f = fopen(path, "r");
     if (!f) return;
