@@ -24,7 +24,7 @@ public:
 	void compute();
 
 private:
-	void getPagerank(unsigned nIter, bool normalize = false);
+	void getPagerank(unsigned nIter);
 	void getBetweenness();
 	void getCloseness();
 	std::vector<double> sssp(unsigned source) const;
