@@ -274,7 +274,8 @@ void VerletDraw()
                     1 - (t - releaseTime) / SEL_FADE_OUT_T : 1;
                 //double z = Clamp(4.0 / selSSSP[i], 0, 1);
                 double z = selSSSP[i];
-                z = 1 - pow(1 - z, 10);
+                //z = 1 - pow(1 - z, 10);
+                z = 1 - pow(1 - z, 1.2);
                 lerp *= z;
                 h = Lerp(h, 30, lerp);
                 s = Lerp(s, 0.8, lerp);
@@ -338,7 +339,8 @@ void VerletMousePress(int px, int py)
         /*auto sssp = g.d[id];
         selSSSP.clear();
         for (auto p : sssp) selSSSP.push_back(p.first);*/
-        selSSSP = g.betweenness;
+        selSSSP = g.closeness;
+        for (double x : selSSSP) printf("%.4f\n", x);
         //for (int i = 0; i < n; i++)
         //    printf("%d %d %.4f\n", id, i, selSSSP[i]);
         selTime = GetTime();

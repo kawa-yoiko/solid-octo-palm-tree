@@ -45,7 +45,7 @@ void Graph::getCloseness()
 	{
 		double sum = 0;
 		for (int i=0; i<N; ++i)
-			if (i!=v) sum += 1.0 / p[i].first;
+			if (i!=v) sum += 1.0 / d[v][i].first;
 		closeness[v] = sum;
 	}
 	double maxC = 0;
