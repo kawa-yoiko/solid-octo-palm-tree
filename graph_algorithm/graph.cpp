@@ -1,38 +1,74 @@
 #include "graph.h"
+#include <algorithm>
 #include <cmath>
-#include <stack>
+#include <queue>
 
 using std::vector;
 
 
-// multi source shortest path (with path counting)
-// using Floyd-Warshall algorithm
-void Graph::floyd()
+
+// single source shortest path (without path counting)
+// using Dijkstra algorithm
+std::vector<double> Graph::sssp(unsigned source) const
 {
-	int n = edge.size();
-	d = vector<vector<std::pair<double, int>>>
-		(n, vector<std::pair<double, int>>(n, std::make_pair(INFINITY, 0)));
-	for (int i=0; i<n; ++i)
-		d[i][i] = {0,1};
-	for (int i=0; i<n; ++i)
-		for (auto const& p: edge[i])
+	unsigned N = edge.size();
+	std::vector<double> dist(N, INFINITY);
+	std::vector<bool> used(N, false);
+	typedef std::pair<double, unsigned> pq_t;
+	std::priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
+	dist[source] = 0;
+	q.push({0, source});
+	for (unsigned i=0; i<N && !q.empty(); ++i)
+	{
+		unsigned u = q.top().second;
+		q.pop();
+		while (used[u])
 		{
-			if (p.w < d[i][p.v].first)
-				d[i][p.v] = {p.w, 0};
-			if (p.w == d[i][p.v].first)
-				d[i][p.v].second += 1;
+			if (q.empty()) return dist;
+			u = q.top().second;
+			q.pop();
 		}
-	for (int k=0; k<n; ++k)
-		for (int i=0; i<n; ++i) if (i!=k)
-			for (int j=0; j<n; ++j) if (j!=k)
+		used[u] = true;
+		for (auto const& t: edge[u])
+			if (dist[t.v] > dist[u] + t.w)
 			{
-				if (d[i][j].first > d[i][k].first + d[k][j].first)
-					d[i][j] = {d[i][k].first + d[k][j].first, 0};
-				if (d[i][j].first == d[i][k].first + d[k][j].first)
-					d[i][j].second += d[i][k].second * d[k][j].second;
+				dist[t.v] = dist[u] + t.w;
+				q.push({dist[t.v], t.v});
 			}
+	}
+	return dist;
 }
 
+
+// compute betweenness using Brandes' algorithm
+void Graph::getBetweenness()
+{
+	int n = edge.size();
+	std::vector<int> P[n];
+	for (int u=0; u<n; ++u)
+		for (auto const& e: edge[u])
+			P[e.v].push_back(u);
+	betweenness = std::vector<double>(n,0);
+
+	for (int s=0; s<n; ++s)
+	{
+		std::vector<std::pair<double, unsigned>> S;
+		for (int i=0; i<n; ++i)
+			S.push_back({d[s][i],i});
+		std::sort(S.begin(), S.end(), std::greater<std::pair<double, unsigned>>());
+		// S: non-increasing dist {dist, node}
+		double delta[n];
+		std::fill_n(delta, n, 0);
+		for (auto const& p: S)
+		{
+			int w = p.second;
+			for (int v: P[w])
+				delta[v] += 1 + delta[w];
+			if (w != s)
+				betweenness[w] += delta[w];
+		}
+	}
+}
 
 
 
@@ -44,39 +80,11 @@ void Graph::getCloseness()
 	for (int v=0; v<N; ++v)
 	{
 		double sum = 0;
-		for (int i=0; i<N; ++i)
-			if (i!=v) sum += 1.0 / d[v][i].first;
-		closeness[v] = sum;
+		for (double dist: d[v])
+			sum += dist;
+		closeness[v] = 1.0 / sum;
 	}
-	double maxC = 0;
-	for (int i=0; i<N; ++i)
-		maxC = std::max(maxC, closeness[i]);
-	for (int i=0; i<N; ++i)
-		closeness[i] /= maxC;	
 }
-
-
-
-
-void Graph::bf_betweenness()
-{
-	static const double eps = 1e-9;
-	floyd();
-	const unsigned n = edge.size();
-	betweenness = std::vector<double>(n,0);
-	for (int i=0; i<n; ++i)
-		for (int u=0; u<n; ++u)
-			for (int v=0; v<n; ++v)
-				if (u!=i && v!=i &&
-				std::abs(d[u][i].first + d[i][v].first - d[u][v].first) < eps)
-					betweenness[i] += (double) d[u][i].second * d[i][v].second / d[u][v].second;
-	double maxC = 0;
-	for (int i=0; i<n; ++i)
-		maxC = std::max(maxC, betweenness[i]);
-	for (int i=0; i<n; ++i)
-		betweenness[i] /= maxC;	
-}
-
 
 
 
@@ -101,7 +109,6 @@ void Graph::getPagerank(unsigned nIter)
 	for (int i=0; i<N; ++i)
 		pagerank[i] /= maxC;
 }
-
 
 
 namespace NSTarjanAlgorithm
@@ -137,6 +144,7 @@ namespace NSTarjanAlgorithm
 }
 
 
+
 void Graph::tarjan()
 {
 	using namespace NSTarjanAlgorithm;
@@ -149,26 +157,18 @@ void Graph::tarjan()
 		if (dfn[i] == 0)
 			dfs(*this, i);
 	}
-	color_count = col_num;
 }
+
 
 
 void Graph::compute()
 {
 	tarjan();
-	floyd();
+	const int n = edge.size();
+	d = decltype(d)(n);
+	for (int i=0; i<n; ++i)
+		d[i] = sssp(i);
+	getBetweenness();
 	getCloseness();
-	bf_betweenness();
 	getPagerank(15);
 }
-
-
-namespace NSTarjanAlgorithm
-{
-	std::vector<unsigned> low, dfn;
-	std::vector<bool> inStack;
-	int dfsTime, col_num;
-	std::stack<int> S;
-	void dfs(const Graph& G, int x);
-}
-
