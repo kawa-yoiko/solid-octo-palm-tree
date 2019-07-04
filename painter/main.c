@@ -58,7 +58,7 @@ void DrawMainScreen()
 {
     ClearBackground(GRAY_2);
 
-#define quq "Nothing for now   o(' ~ ')o"
+#define quq "Hi there   o(' ~ ')o"
     Vector2 sz = MeasureTextEx(font, quq, 64, 0);
     DrawTextEx(font, quq,
         (Vector2){(SCR_W - sz.x) / 2, (SCR_H - sz.y) / 2},
@@ -70,9 +70,6 @@ void DrawMainScreen()
         if (!isPanelPressed)
             VerletMousePress(GetMouseX() * 2, GetMouseY() * 2);
     }
-
-    if (IsMouseButtonDown(0) && !isPanelPressed)
-        VerletResetRate();
 
     int wheel = GetMouseWheelMove();
     if (wheel != 0)
