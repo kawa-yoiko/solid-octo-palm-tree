@@ -213,7 +213,7 @@ void VerletTick()
             if (fabsf(dx) <= 1e-6) dx = jiggle();
             if (fabsf(dy) <= 1e-6) dy = jiggle();
             float l = sqrtf(dx * dx + dy * dy);
-            l = (l - 30) / l * alpha * linkStrength(u, v);
+            l = (l - 45) / l * alpha * linkStrength(u, v) / e.w;
             dx *= l;
             dy *= l;
             float b = linkBias(u, v);
@@ -343,7 +343,7 @@ void VerletDraw()
                 g.pagerank;
             double exp =
                 mode == MODE_BC ? 8 :
-                mode == MODE_CC ? 1 : 1;
+                mode == MODE_CC ? 1 : 3;
             for (int i = 0; i < n; i++)
                 targetColour[i] = ColorFromHSV(Vector3Lerp(
                     (Vector3){165, 0.7, 0.6},
@@ -455,7 +455,7 @@ void VerletMousePress(int px, int py)
             RegisterColourTransition(SEL_FADE_IN_T);
             gMutex.lock();
             for (int i = 0; i < n; i++) {
-                double z = Clamp(4 / g.d[selVert][i].first, 0, 1);
+                double z = Clamp(4 / g.d[selVert][i], 0, 1);
                 targetColour[i] = ColorFromHSV(Vector3Lerp(
                     (Vector3){165, 0.7, 0.6},
                     (Vector3){ 30, 0.8, 1.0},

@@ -16,6 +16,7 @@ public:
 	std::vector<std::vector<Edge>> edge;
 
 	std::vector<std::vector<double>> d; // d[u][v] = dist
+	int color_count;
 	std::vector<unsigned> color;
 	std::vector<double> pagerank;
 	std::vector<double> closeness;
@@ -35,9 +36,9 @@ private:
 
 namespace NSTarjanAlgorithm
 {
-	std::vector<unsigned> low, dfn;
-	std::vector<bool> inStack;
-	int dfsTime, col_num;
-	std::stack<int> S;
-	void dfs(const Graph& G, int x);
+	extern std::vector<unsigned> low, dfn;
+	extern std::vector<bool> inStack;
+	extern int dfsTime, col_num;
+	extern std::stack<int> S;
+	extern void dfs(const Graph& G, int x);
 }
