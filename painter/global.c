@@ -1,6 +1,7 @@
 #include "global.h"
 
 Font font;
+Font font_alt;
 
 void PalmTreeSetup()
 {
@@ -10,6 +11,7 @@ void PalmTreeSetup()
     SetTargetFPS(60);
 
     font = LoadFontEx("imprima.ttf", 128, 0, 0);
+    font_alt = LoadFontEx("imprima.ttf", 144, 0, 0);
     GenTextureMipmaps(&font.texture);
     SetTextureFilter(font.texture, FILTER_POINT);
 }
