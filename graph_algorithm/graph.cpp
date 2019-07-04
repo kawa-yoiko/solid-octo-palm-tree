@@ -82,8 +82,9 @@ void Graph::getCloseness()
 	for (int v=0; v<N; ++v)
 	{
 		double sum = 0;
-		for (double dist: d[v])
-			sum += 1.0/dist;
+		for (int i=0; i<N; ++i)
+			if (i!=v)
+				sum += 1.0 / d[v][i];
 		closeness[v] = sum;
 	}
 }
