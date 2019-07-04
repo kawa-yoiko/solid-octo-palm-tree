@@ -48,6 +48,11 @@ void Graph::getCloseness()
 			sum += p.first;
 		closeness[v] = 1.0 / sum;
 	}
+	double maxC = 0;
+	for (int i=0; i<n; ++i)
+		maxC = std::mac(maxC, closeness[i]);
+	for (int i=0; i<n; ++i)
+		closeness /= maxC;	
 }
 
 
@@ -65,6 +70,11 @@ void Graph::bf_betweenness()
 				if (u!=i && v!=i &&
 				std::abs(d[u][i].first + d[i][v].first - d[u][v].first) < eps)
 					betweenness[i] += (double) d[u][i].second * d[i][v].second / d[u][v].second;
+	double maxC = 0;
+	for (int i=0; i<n; ++i)
+		maxC = std::mac(maxC, betweenness[i]);
+	for (int i=0; i<n; ++i)
+		betweenness /= maxC;	
 }
 
 
