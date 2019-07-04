@@ -1,4 +1,8 @@
 #include "graph.h"
+#include <cmath>
+#include <stack>
+
+using std::vector;
 
 
 // multi source shortest path (with path counting)
@@ -6,7 +10,8 @@
 void Graph::floyd()
 {
 	int n = edge.size();
-	auto d = vector(n, vector(n, std::make_pair(INFINITY, 0)));
+	d = vector<vector<std::pair<double, int>>>
+		(n, vector<std::pair<double, int>>(n, std::make_pair(INFINITY, 0)));
 	for (int i=0; i<n; ++i)
 		d[i][i] = {0,1};
 	for (int i=0; i<n; ++i)
@@ -26,50 +31,47 @@ void Graph::floyd()
 				if (d[i][j].first == d[i][k].first + d[k][j].first)
 					d[i][j].second += d[i][k].second * d[k][j].second;
 			}
-	return d;
 }
 
 
 
 
 // closeness
-std::vector<double> Graph::closeness() const
+void Graph::getCloseness()
 {
 	const unsigned N = edge.size();
-	std::vector<double> C(N,0);
+	closeness = std::vector<double>(N,0);
 	for (int v=0; v<N; ++v)
 	{
 		double sum = 0;
-		for (double dist: d[v])
-			sum += dist;
-		C[v] = 1.0 / sum;
+		for (auto const& p: d[v])
+			sum += p.first;
+		closeness[v] = 1.0 / sum;
 	}
-	return C;
 }
 
 
 
 
-std::vector<double> Graph::bf_betweenness()
+void Graph::bf_betweenness()
 {
 	static const double eps = 1e-9;
 	floyd();
 	const unsigned n = edge.size();
-	std::vector<double> C(n);
+	betweenness = std::vector<double>(n,0);
 	for (int i=0; i<n; ++i)
 		for (int u=0; u<n; ++u)
 			for (int v=0; v<n; ++v)
 				if (u!=i && v!=i &&
 				std::abs(d[u][i].first + d[i][v].first - d[u][v].first) < eps)
-					C[i] += (double) d[u][i].second * d[i][v].second / d[u][v].second;
-	return C;
+					betweenness[i] += (double) d[u][i].second * d[i][v].second / d[u][v].second;
 }
 
 
 
 
 // pagerank (without smoothing)
-std::vector<double> Graph::pagerank(unsigned nIter, bool normalize)
+void Graph::getPagerank(unsigned nIter, bool normalize)
 {
 	decltype(edge)& trans = normalize? *new decltype(edge)(edge): edge;
 	if (normalize)
@@ -97,40 +99,35 @@ std::vector<double> Graph::pagerank(unsigned nIter, bool normalize)
 		curr = std::move(next);
 	}
 	if (normalize) delete(&trans);
-	return curr;
+	pagerank = curr;
 }
 
 
 
 namespace NSTarjanAlgorithm
 {
-	std::vector<int> low, dfn, color;
-	int dfsTime;
-	std::stack<int> S;
-
-	void dfs(int x)
+	void dfs(Graph& G, int x)
 	{
 		low[x] = dfn[x] = ++dfsTime;
-		inStack = true;
+		inStack[x] = true;
 		S.push(x);
-		for (auto const& e: edge[x])
+		for (auto const& e: G.edge[x])
 		{
 			if (!dfn[e.v])
 			{
-				dfs(e.v);
-				low[x] = min(low[x], low[e.v]);
+				dfs(G, e.v);
+				low[x] = std::min(low[x], low[e.v]);
 			}
 			else if (inStack[e.v])
-				low[x] = min(low[x], dfn[e.v]);
+				low[x] = std::min(low[x], dfn[e.v]);
 		}
 		if (dfn[x] == low[x])
 		{
 			inStack[x] = false;
-			component = {x};
-			color[x] = ++col_num;
+			G.color[x] = ++col_num;
 			while (S.top() != x)
 			{
-				component.push_back(S.top());
+				G.color[S.top()] = col_num;
 				inStack[S.top()] = false;
 				S.pop();
 			}
@@ -140,19 +137,18 @@ namespace NSTarjanAlgorithm
 }
 
 
-
 void Graph::tarjan()
 {
 	using namespace NSTarjanAlgorithm;
-	dfsTime = 0;
+	dfsTime = col_num = 0;
 	const int n = edge.size();
-	low = dfn = color = vector<int>(n,0);
+	low = dfn = color = vector<unsigned>(n, 0);
+	inStack = vector<bool>(n, false);
 	for (int i=0; i<n; ++i)
 	{
 		if (dfn[i] == 0)
-			tarjan(i);
+			dfs(*this, i);
 	}
-	this->color = color;
 }
 
 
