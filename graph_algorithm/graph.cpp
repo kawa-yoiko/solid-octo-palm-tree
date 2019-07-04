@@ -40,6 +40,8 @@ std::vector<double> Graph::sssp(unsigned source) const
 }
 
 
+
+
 // compute betweenness using Brandes' algorithm
 void Graph::getBetweenness()
 {
@@ -103,11 +105,6 @@ void Graph::getPagerank(unsigned nIter)
 		curr = std::move(next);
 	}
 	pagerank = curr;
-	double maxC = 0;
-	for (int i=0; i<N; ++i)
-		maxC = std::max(maxC, pagerank[i]);
-	for (int i=0; i<N; ++i)
-		pagerank[i] /= maxC;
 }
 
 
@@ -162,6 +159,14 @@ void Graph::tarjan()
 
 
 
+void normalize(std::vector<double>& a)
+{
+	double mu = 1.0 / *std::max_element(a.begin(), a.end());
+	for (double& f: a)
+		f *= mu;
+}
+
+
 void Graph::compute()
 {
 	tarjan();
@@ -172,6 +177,9 @@ void Graph::compute()
 	getBetweenness();
 	getCloseness();
 	getPagerank(15);
+	normalize(betweenness);
+	normalize(closeness);
+	normalize(pagerank);
 }
 
 
