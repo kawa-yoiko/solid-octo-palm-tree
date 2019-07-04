@@ -14,11 +14,18 @@ extern "C" {
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
+#include <atomic>
+#include <thread>
 #include <utility>
 #include <vector>
 
 static int n, m;
+static std::vector<std::vector<int>> outFirst, outOther;
+
 static Graph g;
+
+static std::mutex gMutex;
+static std::atomic<bool> gStarted(false), gSignal(false), gRedraw(false);
 
 static int x, y, hw, hh;
 static float scale = 1;
@@ -45,6 +52,8 @@ static const int MODE_BC = 1;
 static const int MODE_CC = 2;
 static const int MODE_SCC = 3;
 static const int MODE_PR = 4;
+static float firstParSlider = 0;
+static float firstParWeight = 1;
 
 #include "barnes_hut.hh"
 
@@ -73,6 +82,24 @@ static inline void RegisterColourTransition(double dur)
     colourTransitionDur = dur;
 }
 
+static inline Graph BuildGraph()
+{
+    Graph g;
+    g.edge.resize(n);
+    for (int u = 0; u < n; u++) {
+        int p = outFirst[u].size(),
+            q = outOther[u].size();
+        float w = p * firstParWeight + q;
+        for (int v : outFirst[u])
+            g.edge[u].push_back({(unsigned int)v, w / firstParWeight});
+        for (int v : outOther[u])
+            g.edge[u].push_back({(unsigned int)v, w});
+        //for (const auto &e : g.edge[u]) printf("%d %d %.4f\n", u, e.v, e.w);
+    }
+    g.compute();
+    return g;
+}
+
 void InitGraph(int x, int y, int hw, int hh)
 {
     FILE *f = fopen("../crawler/cavestory-processed.txt", "r");
@@ -89,7 +116,8 @@ void InitGraph(int x, int y, int hw, int hh)
     fscanf(f, "%d%d", &n, &m);
     int _n = n;
     n = 300;
-    g.edge.resize(n);
+    outFirst.resize(n);
+    outOther.resize(n);
     vert.resize(n);
 
     char s[1024];
@@ -110,23 +138,18 @@ void InitGraph(int x, int y, int hw, int hh)
         vert[i].c = LIME_3;
     }
 
-    for (int i = 0, u, v, w = 1; i < m; i++) {
-        //fscanf(f, "%d%d%d", &u, &v, &w);
-        fscanf(f, "%d%d", &u, &v);
+    for (int i = 0, u, v, w; i < m; i++) {
+        fscanf(f, "%d%d%d", &u, &v, &w);
         if (u >= n || v >= n) continue;
-        g.edge[u].push_back(Graph::Edge(v, 0));
         vert[u].deg++;
         vert[v].deg++;
+        (w ? outFirst : outOther)[u].push_back(v);
     }
 
     fclose(f);
 
-    // Normalize
-    for (int u = 0; u < n; u++)
-        for (auto &e : g.edge[u])
-            e.w = g.edge[u].size();
-
-    g.compute();
+    Graph g1 = BuildGraph();
+    g = g1;
 
     fromColour.resize(n);
     targetColour.resize(n);
@@ -181,6 +204,7 @@ void VerletTick()
     alpha += (alphaTarget - alpha) * alphaDecay;
 
     // Link force
+    gMutex.lock();
     for (int u = 0; u < n; u++)
         for (const auto &e : g.edge[u]) {
             int v = e.v;
@@ -198,6 +222,7 @@ void VerletTick()
             vert[u].vx += dx * (1 - b);
             vert[u].vy += dy * (1 - b);
         }
+    gMutex.unlock();
 
     // Repulsive force
     /*for (int u = 0; u < n; u++)
@@ -270,8 +295,38 @@ static const double SWITCH_FADE_T = 0.15;
 
 void VerletDraw()
 {
+    float newSlider = PanelGetSlider();
+    if (newSlider != firstParSlider) {
+        firstParSlider = newSlider;
+        firstParWeight = pow(10, firstParSlider);
+        if (!gStarted.load()) {
+            gStarted.store(true);
+            gSignal.store(true);
+            auto mutex = &gMutex;
+            auto started = &gStarted;
+            auto signal = &gSignal;
+            auto redraw = &gRedraw;
+            std::thread t = std::thread([mutex, started, signal, redraw] {
+                do {
+                    puts("A");
+                    signal->store(false);
+                    Graph g1 = BuildGraph();
+                    mutex->lock();
+                    g = g1;
+                    mutex->unlock();
+                    redraw->store(true);
+                    puts("B");
+                } while (signal->load());
+                started->store(false);
+            });
+            t.detach();
+        }
+    }
+
+    gMutex.lock();
     int newMode = PanelGetMode();
-    if (newMode != mode) {
+    if (newMode != mode || gRedraw.load()) {
+        gRedraw.store(false);
         mode = newMode;
         RegisterColourTransition(SWITCH_FADE_T);
         switch (mode) {
@@ -288,7 +343,7 @@ void VerletDraw()
                 g.pagerank;
             double exp =
                 mode == MODE_BC ? 8 :
-                mode == MODE_CC ? 1.2 : 1;
+                mode == MODE_CC ? 1 : 1;
             for (int i = 0; i < n; i++)
                 targetColour[i] = ColorFromHSV(Vector3Lerp(
                     (Vector3){165, 0.7, 0.6},
@@ -329,6 +384,7 @@ void VerletDraw()
         }
     }
     DrawLineStripWithChromaEnd();
+    gMutex.unlock();
 
     double t = GetTime();
     float radius = 5 * Lerp(scale, 1, 0.875);
@@ -397,6 +453,7 @@ void VerletMousePress(int px, int py)
         selVert = id;
         if (mode == MODE_SSSP) {
             RegisterColourTransition(SEL_FADE_IN_T);
+            gMutex.lock();
             for (int i = 0; i < n; i++) {
                 double z = Clamp(4 / g.d[selVert][i].first, 0, 1);
                 targetColour[i] = ColorFromHSV(Vector3Lerp(
@@ -405,6 +462,7 @@ void VerletMousePress(int px, int py)
                     1 - pow(1 - z, 10)
                 ));
             }
+            gMutex.unlock();
         }
         px0 = vert[id].x - px;
         py0 = vert[id].y - py;
