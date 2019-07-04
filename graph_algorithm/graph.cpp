@@ -31,75 +31,6 @@ void Graph::floyd()
 
 
 
-// single source shortest path (without path counting)
-// using Dijkstra algorithm
-std::vector<double> Graph::sssp(unsigned source) const
-{
-	unsigned N = edge.size();
-	std::vector<double> dist(N, INFINITY);
-	std::vector<bool> used(N, false);
-	typedef std::pair<double, unsigned> pq_t;
-	priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
-	dist[source] = 0;
-	q.push({0, source});
-	for (unsigned i=0; i<N && !q.empty(); ++i)
-	{
-		unsigned u = q.top().second;
-		q.pop();
-		while (used[u])
-		{
-			if (q.empty()) return dist;
-			u = q.top().second;
-			q.pop();
-		}
-		used[u] = true;
-		for (auto const& t: edge[u])
-			if (dist[t.v] > dist[u] + t.w)
-			{
-				dist[t.v] = dist[u] + t.w;
-				q.push({dist[t.v], t.v});
-			}
-	}
-	return dist;
-}
-
-
-
-
-// single source shortest path (with path counting)
-// using Dijkstra algorithm
-std::vector<std::pair<double, unsigned>> Graph::sssp(unsigned source) const
-{
-	unsigned N = edge.size();
-	std::vector<std::pair<double, unsigned>> dist(N, {INFINITY, 0});
-	std::vector<bool> used(N, false);
-	typedef std::pair<double, std::pair<unsigned, unsigned>> pq_t;
-	priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
-	dist[source] = {0,1};
-	q.push({0, source});
-	for (unsigned i=0; i<N && !q.empty(); ++i)
-	{
-		unsigned u = q.top().second;
-		q.pop();
-		while (used[u])
-		{
-			if (q.empty()) return dist;
-			u = q.top().second;
-			q.pop();
-		}
-		used[u] = true;
-		for (auto const& t: edge[u])
-			if (dist[t.v] > dist[u] + t.w)
-			{
-				dist[t.v] = dist[u] + t.w;
-				q.push({dist[t.v], t.v});
-			}
-	}
-	return dist;
-}
-
-
-
 
 // closeness
 std::vector<double> Graph::closeness() const
@@ -119,8 +50,6 @@ std::vector<double> Graph::closeness() const
 
 
 
-
-
 std::vector<double> Graph::bf_betweenness()
 {
 	static const double eps = 1e-9;
@@ -135,7 +64,6 @@ std::vector<double> Graph::bf_betweenness()
 					C[i] += (double) d[u][i].second * d[i][v].second / d[u][v].second;
 	return C;
 }
-
 
 
 
@@ -212,6 +140,7 @@ namespace NSTarjanAlgorithm
 }
 
 
+
 void Graph::tarjan()
 {
 	using namespace NSTarjanAlgorithm;
@@ -225,6 +154,5 @@ void Graph::tarjan()
 	}
 	this->color = color;
 }
-
 
 

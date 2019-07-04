@@ -25,11 +25,8 @@ public:
 
 private:
 	std::vector<double> pagerank(unsigned nIter, bool normalize = false) const;
-	std::vector<double> betweenness() const;
 	std::vector<double> closeness() const;
 	std::vector<double> bf_betweenness() const;
-	std::vector<double> sssp(unsigned source) const;
-	std::vector<std::pair<double, unsigned>> sssp(unsigned source) const;
 	void floyd() const;
 	void tarjan() const;
 };
