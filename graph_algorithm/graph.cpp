@@ -1,35 +1,6 @@
 #include "graph.h"
 
 
-// multi source shortest path (with path counting)
-// using Floyd-Warshall algorithm
-void Graph::floyd()
-{
-	int n = edge.size();
-	auto d = vector(n, vector(n, std::make_pair(INFINITY, 0)));
-	for (int i=0; i<n; ++i)
-		d[i][i] = {0,1};
-	for (int i=0; i<n; ++i)
-		for (auto const& p: edge[i])
-		{
-			if (p.w < d[i][p.v].first)
-				d[i][p.v] = {p.w, 0};
-			if (p.w == d[i][p.v].first)
-				d[i][p.v].second += 1;
-		}
-	for (int k=0; k<n; ++k)
-		for (int i=0; i<n; ++i) if (i!=k)
-			for (int j=0; j<n; ++j) if (j!=k)
-			{
-				if (d[i][j].first > d[i][k].first + d[k][j].first)
-					d[i][j] = {d[i][k].first + d[k][j].first, 0};
-				if (d[i][j].first == d[i][k].first + d[k][j].first)
-					d[i][j].second += d[i][k].second * d[k][j].second;
-			}
-	return d;
-}
-
-
 
 // single source shortest path (without path counting)
 // using Dijkstra algorithm
@@ -64,39 +35,12 @@ std::vector<double> Graph::sssp(unsigned source) const
 }
 
 
-
-
-// single source shortest path (with path counting)
-// using Dijkstra algorithm
-std::vector<std::pair<double, unsigned>> Graph::sssp(unsigned source) const
+// compute betweenness using Brandes' algorithm
+void Graph::getBetweenness()
 {
-	unsigned N = edge.size();
-	std::vector<std::pair<double, unsigned>> dist(N, {INFINITY, 0});
-	std::vector<bool> used(N, false);
-	typedef std::pair<double, std::pair<unsigned, unsigned>> pq_t;
-	priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
-	dist[source] = {0,1};
-	q.push({0, source});
-	for (unsigned i=0; i<N && !q.empty(); ++i)
-	{
-		unsigned u = q.top().second;
-		q.pop();
-		while (used[u])
-		{
-			if (q.empty()) return dist;
-			u = q.top().second;
-			q.pop();
-		}
-		used[u] = true;
-		for (auto const& t: edge[u])
-			if (dist[t.v] > dist[u] + t.w)
-			{
-				dist[t.v] = dist[u] + t.w;
-				q.push({dist[t.v], t.v});
-			}
-	}
-	return dist;
+	
 }
+
 
 
 // closeness
@@ -111,24 +55,6 @@ void Graph::getCloseness()
 			sum += p.first;
 		closeness[v] = 1.0 / sum;
 	}
-}
-
-
-
-
-std::vector<double> Graph::bf_betweenness()
-{
-	static const double eps = 1e-9;
-	floyd();
-	const unsigned n = edge.size();
-	std::vector<double> C(n);
-	for (int i=0; i<n; ++i)
-		for (int u=0; u<n; ++u)
-			for (int v=0; v<n; ++v)
-				if (u!=i && v!=i &&
-				std::abs(d[u][i].first + d[i][v].first - d[u][v].first) < eps)
-					C[i] += (double) d[u][i].second * d[i][v].second / d[u][v].second;
-	return C;
 }
 
 
