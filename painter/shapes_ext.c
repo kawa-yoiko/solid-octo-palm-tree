@@ -297,9 +297,10 @@ void DrawCircleSectorBatch(Vector2 center, Color color)
         for (int i = 0; i < circleSegs; i++)
         {
             rlColor4ub(color.r, color.g, color.b, color.a);
-
             rlVertex2f(center.x, center.y);
+            rlColor4ub(color.r, color.g, color.b, color.a);
             rlVertex2f(center.x + sinTable[i], center.y + cosTable[i]);
+            rlColor4ub(color.r, color.g, color.b, color.a);
             rlVertex2f(center.x + sinTable[i + 1], center.y + cosTable[i + 1]);
         }
     //rlEnd();

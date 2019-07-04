@@ -53,6 +53,8 @@ void InitGraph(int x, int y, int hw, int hh)
     ::hh = hh;
 
     fscanf(f, "%d%d", &n, &m);
+    int _n = n;
+    n = 300;
     g.edge.resize(n);
     vert.resize(n);
 
@@ -62,11 +64,12 @@ void InitGraph(int x, int y, int hw, int hh)
     const float radius = 10;
     const float angle = M_PI * (3 - sqrtf(5));
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < _n; i++) {
         fgets(s, sizeof s, f);
         int len = strlen(s);
         while (len > 0 && isspace(s[len - 1])) len--;
         s[len] = '\0';
+        if (i >= n) continue;
         vert[i].title = strdup(s);
         vert[i].x = cos(angle * i) * radius * sqrtf(i);
         vert[i].y = sin(angle * i) * radius * sqrtf(i);
@@ -76,12 +79,20 @@ void InitGraph(int x, int y, int hw, int hh)
     for (int i = 0, u, v, w = 1; i < m; i++) {
         //fscanf(f, "%d%d%d", &u, &v, &w);
         fscanf(f, "%d%d", &u, &v);
-        g.edge[u].push_back(Graph::Edge(v, w));
+        if (u >= n || v >= n) continue;
+        g.edge[u].push_back(Graph::Edge(v, 0));
         vert[u].deg++;
         vert[v].deg++;
     }
 
     fclose(f);
+
+    // Normalize
+    for (int u = 0; u < n; u++)
+        for (auto &e : g.edge[u])
+            e.w = g.edge[u].size();
+
+    g.compute();
 }
 
 static float alpha, alphaMin, alphaDecay, alphaTarget;
@@ -261,7 +272,9 @@ void VerletDraw()
                     (t - selTime) / SEL_FADE_IN_T :
                     (t > releaseTime) ?
                     1 - (t - releaseTime) / SEL_FADE_OUT_T : 1;
-                lerp *= selSSSP[i];
+                double z = Clamp(4.0 / selSSSP[i], 0, 1);
+                z = 1 - pow(1 - z, 10);
+                lerp *= z;
                 c.r = Lerp(c.r, c1.r, lerp);
                 c.g = Lerp(c.g, c1.g, lerp);
                 c.b = Lerp(c.b, c1.b, lerp);
@@ -320,10 +333,11 @@ void VerletMousePress(int px, int py)
     FindNearest(px, py, id, nearest);
     if (nearest <= 10 * 10) {
         selVert = id;
-        g.compute();
         auto sssp = g.d[id];
         selSSSP.clear();
         for (auto p : sssp) selSSSP.push_back(p.first);
+        //for (int i = 0; i < n; i++)
+        //    printf("%d %d %.4f\n", id, i, selSSSP[i]);
         selTime = GetTime();
         releaseTime = INFINITY;
         px0 = vert[id].x - px;
