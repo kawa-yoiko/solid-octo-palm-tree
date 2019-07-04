@@ -24,7 +24,7 @@ public:
 	void compute();
 
 private:
-	void getPagerank(unsigned nIter, bool normalize = false);
+	void getPagerank(unsigned nIter);
 	void getCloseness();
 	void bf_betweenness();
 	void floyd();
