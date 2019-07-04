@@ -48,15 +48,22 @@ static const int MODE_PR = 4;
 
 #include "barnes_hut.hh"
 
-static std::vector<Vector3> fromColour, targetColour;
+static std::vector<Color> fromColour, targetColour;
 static double colourTransitionStart = -1, colourTransitionDur = 1;
 
-static inline Vector3 GetColour(int id)
+static inline Color GetColour(int id)
 {
     double rate = Clamp(
         (GetTime() - colourTransitionStart) / colourTransitionDur,
         0, 1);
-    return Vector3Lerp(fromColour[id], targetColour[id], rate);
+    Color c1 = fromColour[id];
+    Color c2 = targetColour[id];
+    return (Color){
+        (unsigned char)Lerp(c1.r, c2.r, rate),
+        (unsigned char)Lerp(c1.g, c2.g, rate),
+        (unsigned char)Lerp(c1.b, c2.b, rate),
+        255
+    };
 }
 
 static inline void RegisterColourTransition(double dur)
@@ -124,10 +131,10 @@ void InitGraph(int x, int y, int hw, int hh)
     fromColour.resize(n);
     targetColour.resize(n);
     for (int i = 0; i < n; i++)
-        fromColour[i] = targetColour[i] = (Vector3){190, 0, 1};
+        targetColour[i] = ColorFromHSV((Vector3){190, 0, 1});
     RegisterColourTransition(0.5);
     for (int i = 0; i < n; i++)
-        targetColour[i] = (Vector3){165, 0.7, 0.6};
+        targetColour[i] = ColorFromHSV((Vector3){165, 0.7, 0.6});
 }
 
 static float alpha, alphaMin, alphaDecay, alphaTarget;
@@ -270,7 +277,7 @@ void VerletDraw()
         switch (mode) {
         case MODE_SSSP:
             for (int i = 0; i < n; i++)
-                targetColour[i] = (Vector3){165, 0.7, 0.6};
+                targetColour[i] = ColorFromHSV((Vector3){165, 0.7, 0.6});
             break;
         case MODE_BC:
         case MODE_CC:
@@ -283,17 +290,17 @@ void VerletDraw()
                 mode == MODE_BC ? 8 :
                 mode == MODE_CC ? 1.2 : 1;
             for (int i = 0; i < n; i++)
-                targetColour[i] = Vector3Lerp(
+                targetColour[i] = ColorFromHSV(Vector3Lerp(
                     (Vector3){165, 0.7, 0.6},
                     (Vector3){ 30, 0.8, 1.0},
-                    1 - pow(1 - val[i], exp));
+                    1 - pow(1 - val[i], exp)));
             break;
         }
         case MODE_SCC:
             for (int i = 0; i < n; i++)
-                targetColour[i] = (Vector3){
+                targetColour[i] = ColorFromHSV((Vector3){
                     360.0f / g.color_count * g.color[i], 0.6, 0.95
-                };
+                });
             break;
         }
     }
@@ -334,7 +341,7 @@ void VerletDraw()
         if (p.x > -radius && p.x < SCR_W + radius &&
             p.y > -radius && p.y < SCR_H + radius)
         {
-            DrawCirclesAdd(p, ColorFromHSV(GetColour(i)));
+            DrawCirclesAdd(p, GetColour(i));
         }
     }
     DrawCirclesEnd();
@@ -392,11 +399,11 @@ void VerletMousePress(int px, int py)
             RegisterColourTransition(SEL_FADE_IN_T);
             for (int i = 0; i < n; i++) {
                 double z = Clamp(4 / g.d[selVert][i].first, 0, 1);
-                targetColour[i] = Vector3Lerp(
+                targetColour[i] = ColorFromHSV(Vector3Lerp(
                     (Vector3){165, 0.7, 0.6},
                     (Vector3){ 30, 0.8, 1.0},
                     1 - pow(1 - z, 10)
-                );
+                ));
             }
         }
         px0 = vert[id].x - px;
@@ -458,7 +465,7 @@ void VerletMouseRelease()
         if (mode == MODE_SSSP) {
             RegisterColourTransition(SEL_FADE_IN_T);
             for (int i = 0; i < n; i++) {
-                targetColour[i] = (Vector3){165, 0.7, 0.6};
+                targetColour[i] = ColorFromHSV((Vector3){165, 0.7, 0.6});
             }
         }
     }
