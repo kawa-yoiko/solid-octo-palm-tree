@@ -205,7 +205,8 @@ static inline void DrawStartupScreen()
 int main(int argc, char *argv[])
 {
     PalmTreeSetup();
-    InitGraph(SCR_W * 0.35, SCR_H * 0.5, SCR_W * 0.35, SCR_H * 0.5);
+    InitGraph(argc >= 2 ? argv[1] : "cavestory",
+        SCR_W * 0.35, SCR_H * 0.5, SCR_W * 0.35, SCR_H * 0.5);
     VerletResetRate();
 
     PanelSetDimensions(SCR_W * 0.7, 0, SCR_W * 0.3, SCR_H);

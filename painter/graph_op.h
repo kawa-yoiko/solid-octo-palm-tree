@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-void InitGraph(int x, int y, int hw, int hh);
+void InitGraph(const char *dataset, int x, int y, int hw, int hh);
 
 void VerletTick();
 void VerletDraw();

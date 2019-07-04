@@ -100,7 +100,7 @@ void PanelDraw()
     DrawRectangle(tx, ty, tw, th, Fade(GRAY_2, 0.8));
     rlglDraw(); // Workaround for raylib#891
 
-    DrawTextEx(font_alt, "Epigraph weight",
+    DrawTextEx(font_alt, "Epigraph bias",
         (Vector2){tx + 12, ty + Y1},
         36, 0, GRAY_8);
 

@@ -102,10 +102,12 @@ static inline Graph BuildGraph()
     return g;
 }
 
-void InitGraph(int x, int y, int hw, int hh)
+void InitGraph(const char *dataset, int x, int y, int hw, int hh)
 {
-    FILE *f = fopen("../crawler/cavestory-processed.txt", "r");
-    //FILE *f = fopen("graph.txt", "r");
+    char path[64];
+    snprintf(path, sizeof path, "../crawler/%s-processed.txt", dataset);
+
+    FILE *f = fopen(path, "r");
     if (!f) return;
 
     g.edge.clear();
