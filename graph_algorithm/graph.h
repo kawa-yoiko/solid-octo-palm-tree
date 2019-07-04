@@ -24,13 +24,26 @@ public:
 	void compute();
 
 private:
-	std::vector<double> pagerank(unsigned nIter, bool normalize = false) const;
+	void getPagerank(unsigned nIter, bool normalize = false);
 	std::vector<double> betweenness() const;
-	std::vector<double> closeness() const;
+	void getCloseness();
 	std::vector<double> bf_betweenness() const;
 	std::vector<double> sssp(unsigned source) const;
 	std::vector<std::pair<double, unsigned>> sssp(unsigned source) const;
-	void floyd() const;
-	void tarjan() const;
+
+	void floyd();
+	void tarjan();
 };
+
+
+
+namespace NSTarjanAlgorithm
+{
+	std::vector<unsigned> low, dfn;
+	std::vector<bool> inStack;
+	int dfsTime, col_num;
+	std::stack<int> S;
+	void dfs(const Graph& G, int x);
+}
+
 
