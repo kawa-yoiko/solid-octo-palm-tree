@@ -152,3 +152,18 @@ void Graph::tarjan()
 }
 
 
+void Graph::compute()
+{
+	floyd();
+}
+
+
+namespace NSTarjanAlgorithm
+{
+	std::vector<unsigned> low, dfn;
+	std::vector<bool> inStack;
+	int dfsTime, col_num;
+	std::stack<int> S;
+	void dfs(const Graph& G, int x);
+}
+

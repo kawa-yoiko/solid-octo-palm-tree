@@ -15,14 +15,6 @@ extern "C" {
 #include <utility>
 #include <vector>
 
-std::vector<double> Graph::sssp(unsigned source)
-{
-    std::vector<double> ret;
-    for (size_t i = 0; i < edge.size(); i++)
-        ret.push_back((double)std::abs((int)i - (int)source) / edge.size());
-    return ret;
-}
-
 static int n, m;
 static Graph g;
 
@@ -328,7 +320,10 @@ void VerletMousePress(int px, int py)
     FindNearest(px, py, id, nearest);
     if (nearest <= 10 * 10) {
         selVert = id;
-        selSSSP = g.sssp(id);
+        g.compute();
+        auto sssp = g.d[id];
+        selSSSP.clear();
+        for (auto p : sssp) selSSSP.push_back(p.first);
         selTime = GetTime();
         releaseTime = INFINITY;
         px0 = vert[id].x - px;
