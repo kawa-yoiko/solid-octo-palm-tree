@@ -1,4 +1,9 @@
 #include "graph.h"
+#include <algorithm>
+#include <cmath>
+#include <queue>
+
+using std::vector;
 
 
 
@@ -10,7 +15,7 @@ std::vector<double> Graph::sssp(unsigned source) const
 	std::vector<double> dist(N, INFINITY);
 	std::vector<bool> used(N, false);
 	typedef std::pair<double, unsigned> pq_t;
-	priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
+	std::priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
 	dist[source] = 0;
 	q.push({0, source});
 	for (unsigned i=0; i<N && !q.empty(); ++i)
@@ -38,7 +43,31 @@ std::vector<double> Graph::sssp(unsigned source) const
 // compute betweenness using Brandes' algorithm
 void Graph::getBetweenness()
 {
-	
+	int n = edge.size();
+	std::vector<int> P[n];
+	for (int u=0; u<n; ++u)
+		for (auto const& e: edge[u])
+			P[e.v].push_back(u);
+	betweenness = std::vector<double>(n,0);
+
+	for (int s=0; s<n; ++s)
+	{
+		std::vector<std::pair<double, unsigned>> S;
+		for (int i=0; i<n; ++i)
+			S.push_back({d[s][i],i});
+		std::sort(S.begin(), S.end(), std::greater<std::pair<double, unsigned>>());
+		// S: non-increasing dist {dist, node}
+		double delta[n];
+		std::fill_n(delta, n, 0);
+		for (auto const& p: S)
+		{
+			int w = p.second;
+			for (int v: P[w])
+				delta[v] += 1 + delta[w];
+			if (w != s)
+				betweenness[w] += delta[w];
+		}
+	}
 }
 
 
@@ -51,8 +80,8 @@ void Graph::getCloseness()
 	for (int v=0; v<N; ++v)
 	{
 		double sum = 0;
-		for (auto const& p: d[v])
-			sum += p.first;
+		for (double dist: d[v])
+			sum += dist;
 		closeness[v] = 1.0 / sum;
 	}
 }
@@ -127,6 +156,7 @@ namespace NSTarjanAlgorithm
 }
 
 
+
 void Graph::tarjan()
 {
 	using namespace NSTarjanAlgorithm;
@@ -139,5 +169,20 @@ void Graph::tarjan()
 		if (dfn[i] == 0)
 			dfs(*this, i);
 	}
+}
+
+
+
+void Graph::compute()
+{
+	tarjan();
+	const int n = edge.size();
+	d = decltype(d)(n);
+	for (int i=0; i<n; ++i)
+		d[i] = sssp(i);
+	getBetweenness();
+	getCloseness();
+	// TODO
+	// getPagerank(15);
 }
 
