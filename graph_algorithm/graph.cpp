@@ -152,3 +152,15 @@ void Graph::tarjan()
 }
 
 
+
+void Graph::compute()
+{
+	tarjan();
+	floyd();
+	getCloseness();
+	bf_betweenness();
+	// TODO
+	// getPagerank(15);
+	// 边权是转移概率还是倒数？
+}
+
