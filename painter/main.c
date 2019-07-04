@@ -147,9 +147,10 @@ void DrawIcon(Vector2 offset, float scale, float t)
             -0.4 + easeCycle(t + 2, 2.71, 0.03));
         DrawPolyFilledConcave(Leaf4Scaled, OvO * 2 + 1, GRAY_8);
     }
+    rlglDraw();
 
     t -= 2.5;
-    if (t > 1e-5) {
+    if (t > 1e-5 && t < 100) {
         Vector2 p1 = {offset.x - 10 * scale, offset.y - 86 * scale};
         Vector2 p2 = {offset.x + 6 * scale, offset.y - 84 * scale};
         Vector2 p3 = {offset.x - 1 * scale, offset.y - 77 * scale};

@@ -54,6 +54,9 @@ static const int MODE_SCC = 3;
 static const int MODE_PR = 4;
 static float firstParSlider = 0;
 static float firstParWeight = 1;
+static int iconOpacity = 0;
+static const int ICON_OPACITY_MAX = 64;
+static const int ICON_OPACITY_INC = 2;
 
 #include "barnes_hut.hh"
 
@@ -94,7 +97,6 @@ static inline Graph BuildGraph()
             g.edge[u].push_back({(unsigned int)v, w / firstParWeight});
         for (int v : outOther[u])
             g.edge[u].push_back({(unsigned int)v, w});
-        //for (const auto &e : g.edge[u]) printf("%d %d %.4f\n", u, e.v, e.w);
     }
     g.compute();
     return g;
@@ -115,7 +117,6 @@ void InitGraph(int x, int y, int hw, int hh)
 
     fscanf(f, "%d%d", &n, &m);
     int _n = n;
-    n = 300;
     outFirst.resize(n);
     outOther.resize(n);
     vert.resize(n);
@@ -308,14 +309,12 @@ void VerletDraw()
             auto redraw = &gRedraw;
             std::thread t = std::thread([mutex, started, signal, redraw] {
                 do {
-                    puts("A");
                     signal->store(false);
                     Graph g1 = BuildGraph();
                     mutex->lock();
                     g = g1;
                     mutex->unlock();
                     redraw->store(true);
-                    puts("B");
                 } while (signal->load());
                 started->store(false);
             });
@@ -424,6 +423,8 @@ void VerletDraw()
         DrawRectangleV(pos, size, Fade(GRAY_4, alpha));
         DrawTextEx(font, vert[hoverID].title, pos, 32, 0, Fade(GRAY_8, alpha));
     }
+
+    DrawIcon((Vector2){SCR_W * 0.92, SCR_H + 3}, SCR_W / 1200.0, GetTime() * 2 + 200);
 }
 
 #endif

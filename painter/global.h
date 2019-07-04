@@ -46,6 +46,10 @@ void DrawCirclesBegin(float r, int segs);
 void DrawCirclesAdd(Vector2 p, Color c);
 void DrawCirclesEnd();
 
+// main.c
+
+void DrawIcon(Vector2 offset, float scale, float t);
+
 #include "easings.h"
 
 #include "math_ext.h"
