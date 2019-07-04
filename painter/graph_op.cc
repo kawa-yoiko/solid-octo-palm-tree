@@ -247,8 +247,8 @@ void VerletDraw()
             if (dsq < hw * hw * 2) {
                 DrawLineStripWithChromaAdd(p, q,
                     sqrtf(dsq), 2.5,
-                    dsq < hw * hw ? GRAY_6 :
-                    Fade(GRAY_6, 2.0 - (float)dsq / (hw * hw)));
+                    dsq < hw * hw ? GRAY_4 :
+                    Fade(GRAY_4, 2.0 - (float)dsq / (hw * hw)));
             }
         }
     }
@@ -265,7 +265,7 @@ void VerletDraw()
         if (p.x > -radius && p.x < SCR_W + radius &&
             p.y > -radius && p.y < SCR_H + radius)
         {
-            Color c = LIME_8;
+            float h = 165, s = 0.7, v = 0.6;
             if (selVert >= 0 || t < releaseTime + SEL_FADE_OUT_T) {
                 Color c1 = ORANGE_6;
                 double lerp = (t < selTime + SEL_FADE_IN_T) ?
@@ -275,10 +275,11 @@ void VerletDraw()
                 double z = Clamp(4.0 / selSSSP[i], 0, 1);
                 z = 1 - pow(1 - z, 10);
                 lerp *= z;
-                c.r = Lerp(c.r, c1.r, lerp);
-                c.g = Lerp(c.g, c1.g, lerp);
-                c.b = Lerp(c.b, c1.b, lerp);
+                h = Lerp(h, 30, lerp);
+                s = Lerp(s, 0.8, lerp);
+                v = Lerp(v, 1, lerp);
             }
+            Color c = ColorFromHSV((Vector3){h, s, v});
             DrawCirclesAdd(p, c);
         }
     }
