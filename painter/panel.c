@@ -100,7 +100,7 @@ void PanelDraw()
     DrawRectangle(tx, ty, tw, th, Fade(GRAY_2, 0.8));
     rlglDraw(); // Workaround for raylib#891
 
-    DrawTextEx(font, "First-paragraph weight",
+    DrawTextEx(font_alt, "Epigraph weight",
         (Vector2){tx + 12, ty + Y1},
         36, 0, GRAY_8);
 
@@ -114,14 +114,14 @@ void PanelDraw()
 
     char s[8];
     snprintf(s, sizeof s, "%.2f", PanelGetSlider1());
-    Vector2 sz = MeasureTextEx(font, s, 24, 0);
+    Vector2 sz = MeasureTextEx(font_alt, s, 24, 0);
     float x = tx + tw / 2 + W_S1 * slider1 - sz.x / 2;
     x = Clamp(x, tx + 12, tx + tw - 12 - sz.x);
-    DrawTextEx(font, s,
+    DrawTextEx(font_alt, s,
         (Vector2){x, ty + Y_S1 + 12},
         24, 0, GRAY_8);
 
-    DrawTextEx(font, "Vertex colour",
+    DrawTextEx(font_alt, "Vertex colour",
         (Vector2){tx + 12, ty + Y2},
         36, 0, GRAY_8);
     rlglDraw();

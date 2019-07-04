@@ -18,6 +18,7 @@
 // global.c
 
 extern Font font;
+extern Font font_alt;   // Alternative size to avoid broken AA
 
 void PalmTreeSetup();
 
