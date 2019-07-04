@@ -272,7 +272,8 @@ void VerletDraw()
                     (t - selTime) / SEL_FADE_IN_T :
                     (t > releaseTime) ?
                     1 - (t - releaseTime) / SEL_FADE_OUT_T : 1;
-                double z = Clamp(4.0 / selSSSP[i], 0, 1);
+                //double z = Clamp(4.0 / selSSSP[i], 0, 1);
+                double z = selSSSP[i];
                 z = 1 - pow(1 - z, 10);
                 lerp *= z;
                 h = Lerp(h, 30, lerp);
@@ -334,9 +335,10 @@ void VerletMousePress(int px, int py)
     FindNearest(px, py, id, nearest);
     if (nearest <= 10 * 10) {
         selVert = id;
-        auto sssp = g.d[id];
+        /*auto sssp = g.d[id];
         selSSSP.clear();
-        for (auto p : sssp) selSSSP.push_back(p.first);
+        for (auto p : sssp) selSSSP.push_back(p.first);*/
+        selSSSP = g.betweenness;
         //for (int i = 0; i < n; i++)
         //    printf("%d %d %.4f\n", id, i, selSSSP[i]);
         selTime = GetTime();
