@@ -376,7 +376,7 @@ void VerletDraw()
             dsq *= scale;   // not scale * scale because we'd like to show more
             if (dsq < hw * hw * 2) {
                 DrawLineStripWithChromaAdd(p, q,
-                    sqrtf(dsq), 2.5,
+                    sqrtf(dsq), 3,
                     dsq < hw * hw ? GRAY_4 :
                     Fade(GRAY_4, 2.0 - (float)dsq / (hw * hw)));
             }
@@ -387,7 +387,7 @@ void VerletDraw()
 
     double t = GetTime();
     float radius = 5 * Lerp(scale, 1, 0.875);
-    DrawCirclesBegin(radius, 6);
+    DrawCirclesBegin(radius, 12);
     for (int i = 0; i < n; i++) {
         Vector2 p = (Vector2){
             (float)(x + sx + vert[i].x * scale),
@@ -420,8 +420,12 @@ void VerletDraw()
                 (Vector2){lastHoverX, lastHoverY},
                 pos, EaseExpOut((t - hoverTime) / HOVER_FADE_IN_T));
         }
-        DrawRectangleV(pos, size, Fade(GRAY_4, alpha));
-        DrawTextEx(font, vert[hoverID].title, pos, 32, 0, Fade(GRAY_8, alpha));
+        DrawRectangleV(pos,
+            (Vector2){size.x + 8, size.y + 2},
+            Fade(GRAY_4, alpha));
+        DrawTextEx(font, vert[hoverID].title,
+            (Vector2){pos.x + 4, pos.y + 1},
+            32, 0, Fade(GRAY_8, alpha));
     }
 
     DrawIcon((Vector2){SCR_W * 0.92, SCR_H + 3}, SCR_W / 1200.0, GetTime() * 2 + 200);
@@ -483,6 +487,7 @@ void VerletMouseMove(int px, int py)
 
     if (selVert >= 0) {
         VerletSetFix(selVert, px + px0, py + py0);
+        VerletResetRate();
     } else if (selVert == -2) {
         float dx = (px - px0) * scale;
         float dy = (py - py0) * scale;
