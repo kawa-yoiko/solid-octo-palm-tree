@@ -467,6 +467,7 @@ void VerletMousePress(int px, int py)
         }
         px0 = vert[id].x - px;
         py0 = vert[id].y - py;
+        VerletResetRate();
     } else {
         selVert = -2;
         px0 = px;
