@@ -144,6 +144,7 @@ void Graph::tarjan()
 		if (dfn[i] == 0)
 			dfs(*this, i);
 	}
+	color_count = col_num;
 }
 
 

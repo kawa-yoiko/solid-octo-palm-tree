@@ -34,6 +34,9 @@ static float slider_mx = NAN;
 static int button1 = 0;
 static int button1_hover = -1;
 
+float PanelGetSlider() { return slider1; }
+int PanelGetMode() { return button1; }
+
 void PanelSetDimensions(int x, int y, int w, int h)
 {
     tx = x;

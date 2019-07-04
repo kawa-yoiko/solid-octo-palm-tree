@@ -3,8 +3,10 @@
 
 extern "C" {
 #include "global.h"
+#include "panel.h"
 }
 
+#include "raymath.h"
 #include "rlgl.h"
 
 #include <cctype>
@@ -37,7 +39,32 @@ struct GraphVertex {
 
 static std::vector<GraphVertex> vert;
 
+static int mode = 0;
+static const int MODE_SSSP = 0;
+static const int MODE_BC = 1;
+static const int MODE_CC = 2;
+static const int MODE_SCC = 3;
+static const int MODE_PR = 4;
+
 #include "barnes_hut.hh"
+
+static std::vector<Vector3> fromColour, targetColour;
+static double colourTransitionStart = -1, colourTransitionDur = 1;
+
+static inline Vector3 GetColour(int id)
+{
+    double rate = Clamp(
+        (GetTime() - colourTransitionStart) / colourTransitionDur,
+        0, 1);
+    return Vector3Lerp(fromColour[id], targetColour[id], rate);
+}
+
+static inline void RegisterColourTransition(double dur)
+{
+    for (int i = 0; i < n; i++) fromColour[i] = GetColour(i);
+    colourTransitionStart = GetTime();
+    colourTransitionDur = dur;
+}
 
 void InitGraph(int x, int y, int hw, int hh)
 {
@@ -93,6 +120,14 @@ void InitGraph(int x, int y, int hw, int hh)
             e.w = g.edge[u].size();
 
     g.compute();
+
+    fromColour.resize(n);
+    targetColour.resize(n);
+    for (int i = 0; i < n; i++)
+        fromColour[i] = targetColour[i] = (Vector3){190, 0, 1};
+    RegisterColourTransition(0.5);
+    for (int i = 0; i < n; i++)
+        targetColour[i] = (Vector3){165, 0.7, 0.6};
 }
 
 static float alpha, alphaMin, alphaDecay, alphaTarget;
@@ -219,16 +254,50 @@ static const double HOVER_FADE_IN_T = 0.2;
 static const double HOVER_FADE_OUT_T = 0.4;
 
 static int selVert = -1, px0, py0;
-static double selTime = 0;
-static double releaseTime = -INFINITY;
-static std::vector<double> selSSSP;
 static const double SEL_FADE_IN_T = 0.15;
 static const double SEL_FADE_OUT_T = 0.3;
+
+static const double SWITCH_FADE_T = 0.15;
 
 #if !defined(BARNES_HUT_TEST) && !defined(SIM_TEST)
 
 void VerletDraw()
 {
+    int newMode = PanelGetMode();
+    if (newMode != mode) {
+        mode = newMode;
+        RegisterColourTransition(SWITCH_FADE_T);
+        switch (mode) {
+        case MODE_SSSP:
+            for (int i = 0; i < n; i++)
+                targetColour[i] = (Vector3){165, 0.7, 0.6};
+            break;
+        case MODE_BC:
+        case MODE_CC:
+        case MODE_PR: {
+            std::vector<double> &val =
+                mode == MODE_BC ? g.betweenness :
+                mode == MODE_CC ? g.closeness :
+                g.pagerank;
+            double exp =
+                mode == MODE_BC ? 8 :
+                mode == MODE_CC ? 1.2 : 1;
+            for (int i = 0; i < n; i++)
+                targetColour[i] = Vector3Lerp(
+                    (Vector3){165, 0.7, 0.6},
+                    (Vector3){ 30, 0.8, 1.0},
+                    1 - pow(1 - val[i], exp));
+            break;
+        }
+        case MODE_SCC:
+            for (int i = 0; i < n; i++)
+                targetColour[i] = (Vector3){
+                    360.0f / g.color_count * g.color[i], 0.6, 0.95
+                };
+            break;
+        }
+    }
+
     DrawRectangle(x - hw, y - hh, hw * 2, hh * 2, Fade(GRAY_3, 0.8));
 
     DrawLineStripWithChromaBegin();
@@ -265,24 +334,7 @@ void VerletDraw()
         if (p.x > -radius && p.x < SCR_W + radius &&
             p.y > -radius && p.y < SCR_H + radius)
         {
-            float h = 165, s = 0.7, v = 0.6;
-            if (selVert >= 0 || t < releaseTime + SEL_FADE_OUT_T) {
-                Color c1 = ORANGE_6;
-                double lerp = (t < selTime + SEL_FADE_IN_T) ?
-                    (t - selTime) / SEL_FADE_IN_T :
-                    (t > releaseTime) ?
-                    1 - (t - releaseTime) / SEL_FADE_OUT_T : 1;
-                //double z = Clamp(4.0 / selSSSP[i], 0, 1);
-                double z = selSSSP[i];
-                //z = 1 - pow(1 - z, 10);
-                z = 1 - pow(1 - z, 1.2);
-                lerp *= z;
-                h = Lerp(h, 30, lerp);
-                s = Lerp(s, 0.8, lerp);
-                v = Lerp(v, 1, lerp);
-            }
-            Color c = ColorFromHSV((Vector3){h, s, v});
-            DrawCirclesAdd(p, c);
+            DrawCirclesAdd(p, ColorFromHSV(GetColour(i)));
         }
     }
     DrawCirclesEnd();
@@ -336,15 +388,17 @@ void VerletMousePress(int px, int py)
     FindNearest(px, py, id, nearest);
     if (nearest <= 10 * 10) {
         selVert = id;
-        /*auto sssp = g.d[id];
-        selSSSP.clear();
-        for (auto p : sssp) selSSSP.push_back(p.first);*/
-        selSSSP = g.closeness;
-        for (double x : selSSSP) printf("%.4f\n", x);
-        //for (int i = 0; i < n; i++)
-        //    printf("%d %d %.4f\n", id, i, selSSSP[i]);
-        selTime = GetTime();
-        releaseTime = INFINITY;
+        if (mode == MODE_SSSP) {
+            RegisterColourTransition(SEL_FADE_IN_T);
+            for (int i = 0; i < n; i++) {
+                double z = Clamp(4 / g.d[selVert][i].first, 0, 1);
+                targetColour[i] = Vector3Lerp(
+                    (Vector3){165, 0.7, 0.6},
+                    (Vector3){ 30, 0.8, 1.0},
+                    1 - pow(1 - z, 10)
+                );
+            }
+        }
         px0 = vert[id].x - px;
         py0 = vert[id].y - py;
     } else {
@@ -401,7 +455,12 @@ void VerletMouseRelease()
 {
     if (selVert >= 0) {
         VerletCancelFix(selVert);
-        releaseTime = std::max(selTime + SEL_FADE_IN_T, GetTime());
+        if (mode == MODE_SSSP) {
+            RegisterColourTransition(SEL_FADE_IN_T);
+            for (int i = 0; i < n; i++) {
+                targetColour[i] = (Vector3){165, 0.7, 0.6};
+            }
+        }
     }
     selVert = -1;
 }

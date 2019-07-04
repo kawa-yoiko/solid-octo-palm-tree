@@ -16,6 +16,7 @@ public:
 	std::vector<std::vector<Edge>> edge;
 
 	std::vector<std::vector<std::pair<double, int>>> d; // d[u][v] = {dist, num_shortest_path}
+	int color_count;
 	std::vector<unsigned> color;
 	std::vector<double> pagerank;
 	std::vector<double> closeness;
