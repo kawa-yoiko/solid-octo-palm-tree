@@ -95,6 +95,11 @@ void Graph::getPagerank(unsigned nIter)
 		curr = std::move(next);
 	}
 	pagerank = curr;
+	double maxC = 0;
+	for (int i=0; i<N; ++i)
+		maxC = std::max(maxC, pagerank[i]);
+	for (int i=0; i<N; ++i)
+		pagerank[i] /= maxC;
 }
 
 
