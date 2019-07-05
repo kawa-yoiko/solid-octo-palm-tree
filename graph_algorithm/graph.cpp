@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cmath>
 #include <queue>
-#include <ctime>
 #include <iostream>
 
 using std::vector;
@@ -190,23 +189,17 @@ void normalize(std::vector<double>& a)
 
 void Graph::compute()
 {
-	clock_t t0 = clock();
 	tarjan();
 	const int n = edge.size();
 	dist = vector<vector<double>>(n);
-	clock_t w0 = clock();
 	for (int i=0; i<n; ++i)
 		dist[i] = sssp(i);
-	clock_t w1 = clock();
 	getBetweenness();
 	getCloseness();
 	getPagerank(15);
 	normalize(betweenness);
 	normalize(closeness);
 	normalize(pagerank);
-	clock_t t1 = clock();
-	std::cout << " compute takes " << double(t1-t0) / CLOCKS_PER_SEC << " second\n";
-	std::cout << " mssp    takes " << double(w1-w0) / CLOCKS_PER_SEC << " second\n";
 }
 
 
