@@ -462,7 +462,7 @@ void VerletMousePress(int px, int py)
             RegisterColourTransition(SEL_FADE_IN_T);
             gMutex.lock();
             for (int i = 0; i < n; i++) {
-                double z = Clamp(4 / g.d[selVert][i].first, 0, 1);
+                double z = Clamp(4 / g.dist[selVert][i], 0, 1);
                 targetColour[i] = ColorFromHSV(Vector3Lerp(
                     (Vector3){165, 0.7, 0.6},
                     (Vector3){ 30, 0.8, 1.0},
@@ -543,7 +543,8 @@ void VerletChangeScale(int wheel, int px, int py)
 {
     px = (px - ::x - sx) / scale;
     py = (py - ::y - sy) / scale;
-    float newScale = Clamp(scale + (float)wheel / 16, 1, 8);
+	// SCALE CLAMP
+    float newScale = Clamp(scale + (float)wheel / 16, 0.5, 16);
     // ::x + sx + px * scale == ::x + sx' + px * scale'
     sx = sx + px * (scale - newScale);
     sy = sy + py * (scale - newScale);
