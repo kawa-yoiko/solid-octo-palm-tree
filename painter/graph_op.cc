@@ -543,7 +543,8 @@ void VerletChangeScale(int wheel, int px, int py)
 {
     px = (px - ::x - sx) / scale;
     py = (py - ::y - sy) / scale;
-    float newScale = Clamp(scale + (float)wheel / 16, 1, 8);
+	// SCALE CLAMP
+    float newScale = Clamp(scale + (float)wheel / 16, 0.5, 16);
     // ::x + sx + px * scale == ::x + sx' + px * scale'
     sx = sx + px * (scale - newScale);
     sy = sy + py * (scale - newScale);
