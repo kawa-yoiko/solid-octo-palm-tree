@@ -8,58 +8,12 @@
 using std::vector;
 
 
-// single source shortest path (with path counting)
-// using Dijkstra algorithm
-vector<double> Graph::sssp(unsigned source) const
-{
-	unsigned N = edge.size();
-	vector<double> dist(N, INFINITY);
-	vector<bool> used(N, false);
-	struct pq_t
-	{
-		unsigned v; // vertex no
-		double w; // distance from source
-	};
-	struct pq_cmp
-	{
-		bool operator() (const pq_t& a, const pq_t& b)
-		{
-			return a.w > b.w;
-		}
-	};
-	std::priority_queue<pq_t, std::vector<pq_t>, pq_cmp> q;
-	dist[source] = 0;
-	q.push({source, 0});
-	for (unsigned i=0; i<N && !q.empty(); ++i)
-	{
-		// find nearest unrelaxed vertex
-		unsigned u = q.top().v;
-		q.pop();
-		while (used[u])
-		{
-			if (q.empty()) break;
-			u = q.top().v;
-			q.pop();
-		}
-		if (used[u]) break;
-		used[u] = true;
-		// start relax
-		for (auto const& t: edge[u])
-			if (dist[t.v] > dist[u] + t.w)
-			{
-				dist[t.v] = dist[u] + t.w;
-				q.push({t.v, dist[t.v]});
-			}
-	}
-	return dist;
-}
 
-
-/*
 // single source shortest path (without path counting)
 // using SPFA algorithm
 vector<double> Graph::sssp(unsigned source) const
 {
+	int n = edge.size();
 	vector<double> d(n, INFINITY);
 	bool inq[n];
 	memset(inq, 0, sizeof inq);
@@ -74,14 +28,20 @@ vector<double> Graph::sssp(unsigned source) const
 		inq[u] = 0;
 		for (auto const& e: edge[u])
 		{
-			if (d[e.v].first > d[u].first + e.w)
-				d[e.v].first > d[u].first + e.w)
+			if (d[e.v] > d[u] + e.w)
+			{
+				d[e.v] = d[u] + e.w;
+				if (!inq[e.v])
+				{
+					q.push(e.v);
+					inq[e.v] = 1;
+				}
+			}
 		}
 	}
 	return d;
 }
 
-*/
 
 
 // compute betweenness using Brandes algorithm
