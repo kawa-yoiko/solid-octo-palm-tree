@@ -15,7 +15,7 @@ public:
 	};
 	std::vector<std::vector<Edge>> edge;
 
-	std::vector<std::vector<std::pair<double, unsigned>>> d; // d[u][v] = {dist,pathCnt}
+	std::vector<std::vector<double>> dist; // d[u][v] = {dist,pathCnt}
 	int color_count;
 	std::vector<unsigned> color;
 	std::vector<double> pagerank;
@@ -28,7 +28,7 @@ private:
 	void getPagerank(unsigned nIter);
 	void getBetweenness();
 	void getCloseness();
-	std::vector<std::pair<double, unsigned>> sssp(unsigned source) const;
+	std::vector<double> sssp(unsigned source) const;
 	void tarjan();
 };
 

@@ -213,9 +213,9 @@ int main(int argc, char *argv[])
 
     while (!WindowShouldClose()) {
         BeginDrawing();
-            if (GetTime() <= 6)
-                DrawStartupScreen();
-            else
+            // if (GetTime()+5.5 <= 6)
+                // DrawStartupScreen();
+            // else
                 DrawMainScreen();
         EndDrawing();
     }
