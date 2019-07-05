@@ -58,7 +58,7 @@ void DrawMainScreen()
 {
     ClearBackground(GRAY_2);
 
-#define quq "Nothing for now   o(' ~ ')o"
+#define quq "Hi there   o(' ~ ')o"
     Vector2 sz = MeasureTextEx(font, quq, 64, 0);
     DrawTextEx(font, quq,
         (Vector2){(SCR_W - sz.x) / 2, (SCR_H - sz.y) / 2},
@@ -71,15 +71,11 @@ void DrawMainScreen()
             VerletMousePress(GetMouseX() * 2, GetMouseY() * 2);
     }
 
-    if (IsMouseButtonDown(0) && !isPanelPressed)
-        VerletResetRate();
-
     int wheel = GetMouseWheelMove();
     if (wheel != 0)
         VerletChangeScale(wheel, GetMouseX() * 2, GetMouseY() * 2);
 
-    if (IsMouseButtonDown(0) && isPanelPressed)
-        PanelMouseMove(GetMouseX() * 2, GetMouseY() * 2);
+    PanelMouseMove(GetMouseX() * 2, GetMouseY() * 2);
     VerletMouseMove(GetMouseX() * 2, GetMouseY() * 2);
 
     if (IsMouseButtonReleased(0)) {
@@ -148,9 +144,10 @@ void DrawIcon(Vector2 offset, float scale, float t)
             -0.4 + easeCycle(t + 2, 2.71, 0.03));
         DrawPolyFilledConcave(Leaf4Scaled, OvO * 2 + 1, GRAY_8);
     }
+    rlglDraw();
 
     t -= 2.5;
-    if (t > 1e-5) {
+    if (t > 1e-5 && t < 100) {
         Vector2 p1 = {offset.x - 10 * scale, offset.y - 86 * scale};
         Vector2 p2 = {offset.x + 6 * scale, offset.y - 84 * scale};
         Vector2 p3 = {offset.x - 1 * scale, offset.y - 77 * scale};
@@ -191,7 +188,7 @@ static inline void DrawStartupScreen()
 {
     ClearBackground(LIME_1);
 
-    float t = GetTime() + 5.5;
+    float t = GetTime();
     if (t < 0.3) return;
     t -= 0.3;
 
@@ -208,14 +205,15 @@ static inline void DrawStartupScreen()
 int main(int argc, char *argv[])
 {
     PalmTreeSetup();
-    InitGraph(SCR_W * 0.35, SCR_H * 0.5, SCR_W * 0.35, SCR_H * 0.5);
+    InitGraph(argc >= 2 ? argv[1] : "cavestory",
+        SCR_W * 0.35, SCR_H * 0.5, SCR_W * 0.35, SCR_H * 0.5);
     VerletResetRate();
 
     PanelSetDimensions(SCR_W * 0.7, 0, SCR_W * 0.3, SCR_H);
 
     while (!WindowShouldClose()) {
         BeginDrawing();
-            if (GetTime() + 5.5 <= 6)
+            if (GetTime() <= 6)
                 DrawStartupScreen();
             else
                 DrawMainScreen();

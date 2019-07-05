@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <stack>
 
 
 class Graph
@@ -12,26 +13,22 @@ public:
 		double w;
 		Edge(unsigned _v, double _w) : v(_v), w(_w) { }
 	};
-	using std::vector;
-	vector<vector<Edge>> edge;
+	std::vector<std::vector<Edge>> edge;
 
-	vector<vector<std::pair<double, int>>> d; // d[u][v] = {dist, num_shortest_path}
-	vector<unsigned> color;
-	vector<double> pagerank;
-	vector<double> closeness;
-	vector<double> betweenness;
+	std::vector<std::vector<std::pair<double, unsigned>>> d; // d[u][v] = {dist,pathCnt}
+	int color_count;
+	std::vector<unsigned> color;
+	std::vector<double> pagerank;
+	std::vector<double> closeness;
+	std::vector<double> betweenness;
 
 	void compute();
 
 private:
-	void getPagerank(unsigned nIter, bool normalize = false);
-	std::vector<double> betweenness() const;
+	void getPagerank(unsigned nIter);
+	void getBetweenness();
 	void getCloseness();
-	std::vector<double> bf_betweenness() const;
-	std::vector<double> sssp(unsigned source) const;
 	std::vector<std::pair<double, unsigned>> sssp(unsigned source) const;
-
-	void floyd();
 	void tarjan();
 };
 
@@ -39,11 +36,9 @@ private:
 
 namespace NSTarjanAlgorithm
 {
-	std::vector<unsigned> low, dfn;
-	std::vector<bool> inStack;
-	int dfsTime, col_num;
-	std::stack<int> S;
-	void dfs(const Graph& G, int x);
+	extern std::vector<unsigned> low, dfn;
+	extern std::vector<bool> inStack;
+	extern int dfsTime, col_num;
+	extern std::stack<int> S;
+	extern void dfs(const Graph& G, int x);
 }
-
-

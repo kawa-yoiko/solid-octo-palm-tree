@@ -43,9 +43,12 @@ for (let i = 0; i < dataset.pages.length; i++) {
   const content = dataset.pageContents[curPageId];
   let curly = 0;
   let bracket = -1;
+  let first = true;
   for (let j = 0; j < content.length; j++) {
     const t = content.substr(j, 2);
-    if (t === '{{') {
+    if (t === '==') {
+      first = false;
+    } else if (t === '{{') {
       curly += 1;
     } else if (t === '}}') {
       curly -= 1;
@@ -59,7 +62,7 @@ for (let i = 0; i < dataset.pages.length; i++) {
           if (!title.startsWith('Category:'))
             console.log(pageId, title);
         } else {
-          processResult.edges.push([curPageId, pageId]);
+          processResult.edges.push([curPageId, pageId, first]);
         }
       }
       bracket = -1;
@@ -96,7 +99,9 @@ for (let i = 0; i < processResult.pages.length; i++) {
 for (let i = 0; i < processResult.edges.length; i++) {
   const u = indexOfPageId[processResult.edges[i][0]];
   const v = indexOfPageId[processResult.edges[i][1]];
-  processResultText += u.toString() + ' ' + v.toString() + '\n';
+  const w = processResult.edges[i][2];
+  processResultText += u.toString() + ' ' + v.toString()
+    + ' ' + (w ? '1' : '0') + '\n';
 }
 
 // Write to file

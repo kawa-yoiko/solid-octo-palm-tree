@@ -18,6 +18,7 @@
 // global.c
 
 extern Font font;
+extern Font font_alt;   // Alternative size to avoid broken AA
 
 void PalmTreeSetup();
 
@@ -45,6 +46,10 @@ void DrawLineStripWithChromaEnd();
 void DrawCirclesBegin(float r, int segs);
 void DrawCirclesAdd(Vector2 p, Color c);
 void DrawCirclesEnd();
+
+// main.c
+
+void DrawIcon(Vector2 offset, float scale, float t);
 
 #include "easings.h"
 

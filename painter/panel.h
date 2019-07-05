@@ -11,4 +11,7 @@ void PanelMouseRelease();
 
 void PanelDraw();
 
+float PanelGetSlider();
+int PanelGetMode();
+
 #endif

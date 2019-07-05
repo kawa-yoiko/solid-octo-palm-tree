@@ -1,102 +1,105 @@
 #include "graph.h"
+#include <algorithm>
+#include <cmath>
+#include <queue>
 
-
-// multi source shortest path (with path counting)
-// using Floyd-Warshall algorithm
-void Graph::floyd()
-{
-	int n = edge.size();
-	auto d = vector(n, vector(n, std::make_pair(INFINITY, 0)));
-	for (int i=0; i<n; ++i)
-		d[i][i] = {0,1};
-	for (int i=0; i<n; ++i)
-		for (auto const& p: edge[i])
-		{
-			if (p.w < d[i][p.v].first)
-				d[i][p.v] = {p.w, 0};
-			if (p.w == d[i][p.v].first)
-				d[i][p.v].second += 1;
-		}
-	for (int k=0; k<n; ++k)
-		for (int i=0; i<n; ++i) if (i!=k)
-			for (int j=0; j<n; ++j) if (j!=k)
-			{
-				if (d[i][j].first > d[i][k].first + d[k][j].first)
-					d[i][j] = {d[i][k].first + d[k][j].first, 0};
-				if (d[i][j].first == d[i][k].first + d[k][j].first)
-					d[i][j].second += d[i][k].second * d[k][j].second;
-			}
-	return d;
-}
+using std::vector;
 
 
 
 // single source shortest path (without path counting)
 // using Dijkstra algorithm
-std::vector<double> Graph::sssp(unsigned source) const
+vector<std::pair<double, unsigned>> Graph::sssp(unsigned source) const
 {
 	unsigned N = edge.size();
-	std::vector<double> dist(N, INFINITY);
-	std::vector<bool> used(N, false);
-	typedef std::pair<double, unsigned> pq_t;
-	priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
+	vector<double> dist(N, INFINITY);
+	vector<unsigned> cnt(N, 0);
+	vector<bool> used(N, false);
+	struct pq_t
+	{
+		unsigned v, cnt;
+		double w;
+	};
+	struct pq_cmp
+	{
+		bool operator() (const pq_t& a, const pq_t& b)
+		{
+			return a.w > b.w || (a.w == b.w && a.cnt < b.cnt);
+		}
+	};
+	std::priority_queue<pq_t, std::vector<pq_t>, pq_cmp> q;
 	dist[source] = 0;
-	q.push({0, source});
+	cnt[source] = 1;
+	q.push({source, 1, 0});
 	for (unsigned i=0; i<N && !q.empty(); ++i)
 	{
-		unsigned u = q.top().second;
+		unsigned u = q.top().v;
 		q.pop();
 		while (used[u])
 		{
-			if (q.empty()) return dist;
-			u = q.top().second;
+			if (q.empty()) break;
+			u = q.top().v;
 			q.pop();
 		}
+		if (used[u]) break;
 		used[u] = true;
 		for (auto const& t: edge[u])
+		{
 			if (dist[t.v] > dist[u] + t.w)
 			{
 				dist[t.v] = dist[u] + t.w;
-				q.push({dist[t.v], t.v});
+				cnt[t.v] = cnt[u];
+				q.push({t.v, cnt[t.v], dist[t.v]});
 			}
+			else if (dist[t.v] == dist[u] + t.w)
+			{
+				cnt[t.v] += cnt[u];
+				q.push({t.v, cnt[t.v], dist[t.v]});
+			}
+		}
 	}
-	return dist;
+	vector<std::pair<double, unsigned>> t;
+	for (int i=0; i<N; ++i)
+		t.push_back({dist[i], cnt[i]});
+	return t;
 }
 
 
 
 
-// single source shortest path (with path counting)
-// using Dijkstra algorithm
-std::vector<std::pair<double, unsigned>> Graph::sssp(unsigned source) const
+// compute betweenness using Brandes algorithm
+void Graph::getBetweenness()
 {
-	unsigned N = edge.size();
-	std::vector<std::pair<double, unsigned>> dist(N, {INFINITY, 0});
-	std::vector<bool> used(N, false);
-	typedef std::pair<double, std::pair<unsigned, unsigned>> pq_t;
-	priority_queue<pq_t, std::vector<pq_t>, std::greater<pq_t>> q;
-	dist[source] = {0,1};
-	q.push({0, source});
-	for (unsigned i=0; i<N && !q.empty(); ++i)
+	int n = edge.size();
+	vector<int> P[n];
+	betweenness = std::vector<double>(n,0);
+
+	for (int s=0; s<n; ++s)
 	{
-		unsigned u = q.top().second;
-		q.pop();
-		while (used[u])
+		for (auto& p: P) p.clear();
+		for (int v=0; v<n; ++v)
+			for (auto const& e: edge[v])
+				if (d[s][e.v].first == d[s][v].first + e.w)
+					P[e.v].push_back(v);
+		vector<std::pair<double, unsigned>> S;
+		for (int i=0; i<n; ++i)
+			if (!isinf(d[s][i].first))
+				S.push_back({d[s][i].first, i});
+		std::sort(S.begin(), S.end(), std::greater<std::pair<double, unsigned>>());
+		// S: non-increasing dist {dist, node}
+		double delta[n];
+		std::fill_n(delta, n, 0);
+		for (auto const& p: S)
 		{
-			if (q.empty()) return dist;
-			u = q.top().second;
-			q.pop();
+			int w = p.second;
+			for (int v: P[w])
+				delta[v] += d[s][v].second / d[s][w].second * (1 + delta[w]);
+			if (w != s)
+				betweenness[w] += delta[w];
 		}
-		used[u] = true;
-		for (auto const& t: edge[u])
-			if (dist[t.v] > dist[u] + t.w)
-			{
-				dist[t.v] = dist[u] + t.w;
-				q.push({dist[t.v], t.v});
-			}
 	}
-	return dist;
 }
+
 
 
 // closeness
@@ -107,50 +110,18 @@ void Graph::getCloseness()
 	for (int v=0; v<N; ++v)
 	{
 		double sum = 0;
-		for (auto const& p: d[v])
-			sum += p.first;
-		closeness[v] = 1.0 / sum;
+		for (int i=0; i<N; ++i)
+			if (i!=v)
+				sum += 1.0 / d[v][i].first;
+		closeness[v] = sum;
 	}
 }
-
-
-
-
-std::vector<double> Graph::bf_betweenness()
-{
-	static const double eps = 1e-9;
-	floyd();
-	const unsigned n = edge.size();
-	std::vector<double> C(n);
-	for (int i=0; i<n; ++i)
-		for (int u=0; u<n; ++u)
-			for (int v=0; v<n; ++v)
-				if (u!=i && v!=i &&
-				std::abs(d[u][i].first + d[i][v].first - d[u][v].first) < eps)
-					C[i] += (double) d[u][i].second * d[i][v].second / d[u][v].second;
-	return C;
-}
-
 
 
 
 // pagerank (without smoothing)
-void Graph::getPagerank(unsigned nIter, bool normalize)
+void Graph::getPagerank(unsigned nIter)
 {
-	decltype(edge)& trans = normalize? *new decltype(edge)(edge): edge;
-	if (normalize)
-	{
-		auto trans = edge;
-		for (auto& l: trans)
-		{
-			double sum = 0;
-			for (auto const& p: l)
-				sum += p.w;
-			double normal = 1.0 / sum;
-			for (auto& p: l)
-				p.w *= normal;
-		}
-	}
 	unsigned N = edge.size();
 	std::vector<double> curr(N, 1.0/N);
 	std::vector<double> next;
@@ -158,14 +129,12 @@ void Graph::getPagerank(unsigned nIter, bool normalize)
 	{
 		next = std::vector<double>(N, 0);
 		for (unsigned i=0; i<N; ++i)
-			for (auto const& p: trans[i])
-				next[p.v] += p.w * curr[i];
+			for (auto const& p: edge[i])
+				next[p.v] += 1.0/p.w * curr[i];
 		curr = std::move(next);
 	}
-	if (normalize) delete(&trans);
 	pagerank = curr;
 }
-
 
 
 namespace NSTarjanAlgorithm
@@ -201,6 +170,7 @@ namespace NSTarjanAlgorithm
 }
 
 
+
 void Graph::tarjan()
 {
 	using namespace NSTarjanAlgorithm;
@@ -213,5 +183,40 @@ void Graph::tarjan()
 		if (dfn[i] == 0)
 			dfs(*this, i);
 	}
+	color_count = col_num;
 }
 
+
+
+void normalize(std::vector<double>& a)
+{
+	double mu = 1.0 / *std::max_element(a.begin(), a.end());
+	for (double& f: a)
+		f *= mu;
+}
+
+
+void Graph::compute()
+{
+	tarjan();
+	const int n = edge.size();
+	d = decltype(d)(n);
+	for (int i=0; i<n; ++i)
+		d[i] = sssp(i);
+	getBetweenness();
+	getCloseness();
+	getPagerank(15);
+	normalize(betweenness);
+	normalize(closeness);
+	normalize(pagerank);
+}
+
+
+namespace NSTarjanAlgorithm
+{
+	std::vector<unsigned> low, dfn;
+	std::vector<bool> inStack;
+	int dfsTime, col_num;
+	std::stack<int> S;
+	void dfs(const Graph& G, int x);
+}
