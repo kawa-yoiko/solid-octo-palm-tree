@@ -2,7 +2,6 @@ project(solid-octo-palm-tree)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++11")
-set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-8")
 
 set(source_files
     global.c
