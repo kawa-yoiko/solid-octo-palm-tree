@@ -16,6 +16,7 @@ extern "C" {
 #include <algorithm>
 #include <atomic>
 #include <thread>
+#include <mutex>
 #include <utility>
 #include <vector>
 

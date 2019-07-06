@@ -3,6 +3,8 @@
 #include <cmath>
 #include <queue>
 #include <iostream>
+#include <cstring>
+#include <cstdio>
 
 using std::vector;
 
@@ -56,7 +58,7 @@ void Graph::getBetweenness()
 		// compute P
 		for (auto& p: P) p.clear();
 		for (unsigned v=0; v<n; ++v)
-			if (!isinf(dist[s][v]))
+			if (!std::isinf(dist[s][v]))
 				for (auto const& e: edge[v])
 					if (dist[s][e.v] == dist[s][v] + e.w)
 						P[e.v].push_back(v);
@@ -65,7 +67,7 @@ void Graph::getBetweenness()
 		typedef std::pair<double, unsigned> s_val;
 		vector<s_val> S;
 		for (unsigned i=0; i<n; ++i)
-			if (!isinf(dist[s][i]))
+			if (!std::isinf(dist[s][i]))
 				S.push_back({dist[s][i], i});
 		std::sort(S.begin(), S.end());
 
