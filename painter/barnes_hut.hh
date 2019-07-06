@@ -80,10 +80,15 @@ static inline int Build(int d, int l, int r, float x1, float y1, float x2, float
     for (int i = l; i < r; i++) seq[i] = tmp[i - l];
 
     // Recurse
-    t[u].child[0] = Build(d + 1, l, l + cnt[0], x1, y1, x0, y0);
-    t[u].child[1] = Build(d + 1, l + cnt[0], l + cnt[1], x1, y0, x0, y2);
-    t[u].child[2] = Build(d + 1, l + cnt[1], l + cnt[2], x0, y1, x2, y0);
-    t[u].child[3] = Build(d + 1, l + cnt[2], r, x0, y0, x2, y2);
+    int x;
+    x = Build(d + 1, l, l + cnt[0], x1, y1, x0, y0);
+    t[u].child[0] = x;
+    x = Build(d + 1, l + cnt[0], l + cnt[1], x1, y0, x0, y2);
+    t[u].child[1] = x;
+    x = Build(d + 1, l + cnt[1], l + cnt[2], x0, y1, x2, y0);
+    t[u].child[2] = x;
+    x = Build(d + 1, l + cnt[2], r, x0, y0, x2, y2);
+    t[u].child[3] = x;
 
     return u;
 }

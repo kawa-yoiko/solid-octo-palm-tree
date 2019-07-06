@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 
     while (!WindowShouldClose()) {
         BeginDrawing();
-            if (GetTime() <= 6)
+            if (GetTime() <= 6 && 0)
                 DrawStartupScreen();
             else
                 DrawMainScreen();
