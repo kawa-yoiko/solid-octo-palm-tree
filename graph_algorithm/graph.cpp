@@ -51,7 +51,7 @@ void Graph::getBetweenness()
 	unsigned cnt[n]; // shortest path count
 	betweenness = std::vector<double>(n,0);
 
-	for (unsigned s=0; s<n; ++s)
+	for (unsigned s=0; s<n; ++s) if (!edge[s].empty())
 	{
 		// compute P
 		for (auto& p: P) p.clear();
