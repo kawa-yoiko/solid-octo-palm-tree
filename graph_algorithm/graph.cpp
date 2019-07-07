@@ -53,6 +53,7 @@ void Graph::getBetweenness()
 	unsigned cnt[n]; // shortest path count
 	betweenness = std::vector<double>(n,0);
 
+#pragma omp parallel for private(P,cnt) reduction(+:betweenness)
 	for (unsigned s=0; s<n; ++s)
 	{
 		// compute P
@@ -100,6 +101,7 @@ void Graph::getCloseness()
 {
 	const unsigned N = edge.size();
 	closeness = std::vector<double>(N,0);
+#pragma omp parallel for
 	for (int v=0; v<N; ++v)
 	{
 		double sum = 0;
@@ -194,6 +196,7 @@ void Graph::compute()
 	tarjan();
 	const int n = edge.size();
 	dist = vector<vector<double>>(n);
+#pragma omp parallel for
 	for (int i=0; i<n; ++i)
 		dist[i] = sssp(i);
 	getBetweenness();
