@@ -191,6 +191,7 @@ void normalize(std::vector<double>& a)
 
 void Graph::compute()
 {
+	auto start = std::chrono::system_clock::now();
 	tarjan();
 	const int n = edge.size();
 	dist = vector<vector<double>>(n);
@@ -202,6 +203,9 @@ void Graph::compute()
 	normalize(betweenness);
 	normalize(closeness);
 	normalize(pagerank);
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end-start;
+	std::cout << "Graph::compute() takes " << elapsed_seconds.count() << "s\n";
 }
 
 
