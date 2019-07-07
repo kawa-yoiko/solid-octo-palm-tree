@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cstdio>
 #include <chrono>
+#include <omp.h>
 
 using std::vector;
 
@@ -52,10 +53,11 @@ void Graph::getBetweenness()
 	unsigned n = edge.size();
 	vector<unsigned> P[n]; // prev on shortest path
 	unsigned cnt[n]; // shortest path count
+	double delta[n];
 	betweenness = std::vector<double>(n,0);
 
-#pragma omp parallel for private(P,cnt) reduction(+:betweenness)
-	for (unsigned s=0; s<n; ++s)
+#pragma omp parallel for private(P,cnt,delta)
+	for (unsigned s=0; s<n; ++s) if (!edge[s].empty())
 	{
 		// compute P
 		for (auto& p: P) p.clear();
@@ -80,13 +82,13 @@ void Graph::getBetweenness()
 			for (unsigned v: P[p.second])
 				cnt[p.second] += cnt[v];
 
-		double delta[n];
 		std::fill_n(delta, n, 0);
 		// make S non-increasing
 		std::reverse(S.begin(), S.end());
 		for (auto const& p: S)
 		{
 			int w = p.second;
+#pragma omp reduction(+:betweenness[w])
 			for (int v: P[w])
 				delta[v] += cnt[v] / cnt[w] * (1 + delta[w]);
 			if (w != s)
@@ -209,7 +211,8 @@ void Graph::compute()
 	normalize(pagerank);
 	auto end = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsed_seconds = end-start;
-	std::cout << "Graph::compute() takes " << elapsed_seconds.count() << "s\n";
+	std::cout << "Graph::compute() with " << omp_get_max_threads()
+	<< " threads takes " << elapsed_seconds.count() << "s\n";
 }
 
 
